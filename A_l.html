@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SECTION_A // ACID_TERMINAL</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; background: #030803; overflow: hidden; font-family: 'Courier New', Courier, monospace; color: #00ff41; }
+  
+  /* CRT Scanline & Chromatic Aberration Overlay */
+  body::before {
+    content: " ";
+    display: block;
+    position: fixed;
+    top: 0; left: 0; bottom: 0; right: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.3) 50%), linear-gradient(90deg, rgba(255, 0, 80, 0.08), rgba(0, 255, 65, 0.04), rgba(0, 150, 255, 0.08));
+    z-index: 99999;
+    background-size: 100% 3px, 6px 100%;
+    pointer-events: none;
+    animation: warpGlitch 8s infinite steps(1);
+  }
+
+  @keyframes warpGlitch {
+    0% { transform: translate(0, 0); filter: hue-rotate(0deg); }
+    50% { transform: translate(-1px, 1px); filter: hue-rotate(90deg); }
+    100% { transform: translate(0, 0); filter: hue-rotate(0deg); }
+  }
+
+  #startScreen {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(3, 8, 3, 0.95); display: flex; flex-direction: column;
+    align-items: center; justify-content: center; z-index: 1000;
+  }
+  #startScreen h1 {
+    color: #00ff41; font-size: 3rem; letter-spacing: 8px;
+    text-shadow: 0 0 15px rgba(0,255,65,0.8), 0 0 30px rgba(255,0,128,0.5); margin-bottom: 5px;
+    animation: psychedelicText 4s infinite alternate;
+  }
+  @keyframes psychedelicText {
+    0% { text-shadow: 0 0 10px #00ff41, 0 0 20px #ff007f; color: #00ff41; transform: scale(1); }
+    50% { text-shadow: 0 0 20px #00ffff, 0 0 40px #ff00ff; color: #ff00ff; transform: scale(1.02) skewX(2deg); }
+    100% { text-shadow: 0 0 15px #ff007f, 0 0 30px #00ff41; color: #00ffff; transform: scale(1) skewX(-2deg); }
+  }
+  #startScreen .subtitle { color: #ff00ff; font-size: 0.85rem; letter-spacing: 4px; margin-bottom: 40px; text-shadow: 0 0 8px #ff00ff; }
+  
+  #startBtn {
+    background: rgba(0, 10, 2, 0.85); border: 2px solid #00ff41; color: #00ff41;
+    font-family: 'Courier New', Courier, monospace; font-size: 1.2rem; letter-spacing: 6px;
+    padding: 15px 45px; cursor: pointer; text-shadow: 0 0 6px rgba(0,255,65,0.8); transition: all 0.2s;
+    box-shadow: 0 0 20px rgba(0,255,65,0.3);
+  }
+  #startBtn:hover { background: #00ff41; color: #030803; box-shadow: 0 0 30px rgba(255,0,255,0.8); border-color: #ff00ff; }
+  #startScreen .hint {
+    color: #00aa55; font-size: 0.7rem; margin-top: 35px; letter-spacing: 2px;
+    text-align: center; line-height: 2.2;
+  }
+  
+  #clickHint {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    color: #ff00ff; font-size: 1.1rem; letter-spacing: 3px; z-index: 500;
+    display: none; text-shadow: 0 0 12px #ff00ff; animation: pulse 1s infinite;
+    background: rgba(3, 8, 3, 0.92); padding: 15px 25px; border: 1px solid #ff00ff;
+  }
+  #clickHint.show { display: block; }
+  @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; text-shadow: 0 0 20px #00ffff; } }
+  
+  #crosshair {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 6px; height: 6px; border: 1px solid rgba(255,0,255,0.8); z-index: 150; pointer-events: none;
+    box-shadow: 0 0 6px #00ff41;
+  }
+  #hud {
+    position: fixed; bottom: 20px; left: 20px; color: #00ff41; font-size: 1rem;
+    letter-spacing: 2px; z-index: 180; text-shadow: 0 0 6px #00ff41; pointer-events: none;
+    display: none; border: 1px solid #ff00ff; padding: 10px 15px; background: rgba(0, 10, 2, 0.85);
+  }
+  #interactPrompt {
+    position: fixed; top: 57%; left: 50%; transform: translate(-50%, -50%);
+    color: #ff00ff; font-size: 0.9rem; letter-spacing: 2px; z-index: 185;
+    opacity: 0; transition: opacity 0.2s; text-shadow: 0 0 8px #ff00ff; pointer-events: none;
+    background: rgba(3, 8, 3, 0.9); padding: 5px 10px; border: 1px dashed #ff00ff;
+  }
+  #interactPrompt.show { opacity: 1; }
+  
+  #centerMessage {
+    position: fixed; top: 30%; left: 50%; transform: translate(-50%, -50%);
+    color: #00ffff; font-size: 1rem; letter-spacing: 2px; z-index: 200;
+    opacity: 0; transition: opacity 0.5s; text-shadow: 0 0 12px #00ffff;
+    text-align: center; pointer-events: none; max-width: 80%; line-height: 1.6;
+    background: rgba(3, 8, 3, 0.92); padding: 15px; border: 1px solid #00ffff;
+  }
+  #centerMessage.show { opacity: 1; }
+  
+  #pauseMenu {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(3,8,3,0.94); display: none; flex-direction: column;
+    align-items: center; justify-content: center; z-index: 500;
+  }
+  #pauseMenu h2 { color: #ff00ff; font-size: 2rem; letter-spacing: 8px; margin-bottom: 30px; text-shadow: 0 0 15px #ff00ff; }
+  .menu-btn {
+    background: rgba(0, 10, 2, 0.85); border: 2px solid #00ff41; color: #00ff41;
+    font-family: 'Courier New', Courier, monospace; font-size: 0.9rem; letter-spacing: 3px;
+    padding: 10px 30px; margin: 8px; cursor: pointer; transition: all 0.2s; min-width: 220px;
+  }
+  .menu-btn:hover { border-color: #ff00ff; background: #ff00ff; color: #030803; box-shadow: 0 0 20px #ff00ff; }
+  #loading {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    color: #ff00ff; font-size: 1rem; letter-spacing: 3px; z-index: 2000; text-shadow: 0 0 10px #ff00ff;
+  }
+</style>
+</head>
+<body>
+
+<div id="loading">SYNTHESIZING ACID REALITY...</div>
+
+<div id="startScreen" style="display:none">
+  <h1>SECTION_A.LOG</h1>
+  <div class="subtitle">PSYCHEDELIC VOID TERMINAL</div>
+  <button id="startBtn">JACK IN</button>
+</div>
+
+<div id="clickHint">CLICK TO SYNCHRONIZE NEURAL LINK</div>
+<div id="crosshair"></div>
+<div id="hud">STATE: <span id="hpVal">SYNCHRONIZED</span> | FREQ: <span id="ammoVal">432Hz</span></div>
+<div id="interactPrompt">[E] HARVEST ENTITY</div>
+<div id="centerMessage"></div>
+
+<div id="pauseMenu">
+  <h2>MATRIX HALTED</h2>
+  <button class="menu-btn" onclick="resumeGame()">RESUME STREAM</button>
+  <button class="menu-btn" onclick="quitToMenu()">DISCONNECT</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+let scene, camera, renderer;
+let clock = new THREE.Clock();
+let keys = {};
+let mouseLocked = false;
+let gameStarted = false;
+let isPaused = false;
+let interactables = [];
+let hasFlashlight = false;
+let flashlightOn = false;
+let flashlightLight = null;
+let velocityY = 0;
+let isGrounded = true;
+
+let playerPos = new THREE.Vector3(0, 1.6, 5);
+let yaw = 0;
+let pitch = 0;
+let currentInteractable = null;
+let acidCubes = [];
+
+function showCenterMessage(text, duration) {
+  duration = duration || 2500;
+  const msg = document.getElementById('centerMessage');
+  msg.textContent = text;
+  msg.classList.add('show');
+  setTimeout(() => msg.classList.remove('show'), duration);
+}
+
+function init() {
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x020503);
+  scene.fog = new THREE.FogExp2(0x020503, 0.04);
+
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 50);
+  camera.position.copy(playerPos);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  document.body.appendChild(renderer.domElement);
+
+  const ambient = new THREE.AmbientLight(0x00ff88, 0.8);
+  scene.add(ambient);
+
+  buildPsychedelicHall();
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (!gameStarted || isPaused) return;
+    keys[e.code] = true;
+    if (e.code === 'KeyF') toggleFlashlight();
+    if (e.code === 'KeyE') tryInteract();
+  });
+
+  document.addEventListener('keyup', (e) => { keys[e.code] = false; });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!mouseLocked || !gameStarted || isPaused) return;
+    const sensitivity = 0.002;
+    yaw -= e.movementX * sensitivity;
+    pitch -= e.movementY * sensitivity;
+    pitch = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, pitch));
+  });
+
+  renderer.domElement.addEventListener('click', () => {
+    if (gameStarted && !isPaused) renderer.domElement.requestPointerLock();
+  });
+
+  document.addEventListener('pointerlockchange', () => {
+    mouseLocked = document.pointerLockElement === renderer.domElement;
+    if (mouseLocked) document.getElementById('clickHint').classList.remove('show');
+    else if (gameStarted && !isPaused) document.getElementById('clickHint').classList.add('show');
+  });
+
+  document.getElementById('startBtn').addEventListener('click', () => {
+    document.getElementById('startScreen').style.display = 'none';
+    document.getElementById('hud').style.display = 'block';
+    gameStarted = true;
+    renderer.domElement.requestPointerLock();
+    showCenterMessage("REALITY DISTORTION ACTIVE. FIND THE NEON ARTIFACT.", 4000);
+  });
+
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('startScreen').style.display = 'flex';
+
+  animate();
+}
+
+function buildPsychedelicHall() {
+  const wireMat = new THREE.MeshBasicMaterial({ color: 0x00ff41, wireframe: true });
+  const wireMatPink = new THREE.MeshBasicMaterial({ color: 0xff00ff, wireframe: true });
+
+  // 迷幻發光走廊結構
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(12, 45, 12, 45), wireMat);
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.set(0, 0, -10);
+  scene.add(floor);
+
+  const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(12, 45, 12, 45), wireMatPink);
+  ceiling.rotation.x = Math.PI / 2;
+  ceiling.position.set(0, 4.5, -10);
+  scene.add(ceiling);
+
+  const wallLeft = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4.5, 45), wireMat);
+  wallLeft.position.set(-6, 2.25, -10);
+  scene.add(wallLeft);
+
+  const wallRight = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4.5, 45), wireMatPink);
+  wallRight.position.set(6, 2.25, -10);
+  scene.add(wallRight);
+
+  // 漂浮旋轉的幾何幻覺物件
+  for (let z = 0; z > -35; z -= 6) {
+    const geoType = Math.random() > 0.5 ? new THREE.OctahedronGeometry(0.8) : new THREE.IcosahedronGeometry(0.8);
+    const mat = new THREE.MeshBasicMaterial({ 
+      color: Math.random() > 0.5 ? 0x00ffff : 0xff00ff, 
+      wireframe: true 
+    });
+    const floatingObj = new THREE.Mesh(geoType, mat);
+    floatingObj.position.set((Math.random() - 0.5) * 8, 1.5 + Math.random() * 2, z);
+    scene.add(floatingObj);
+    acidCubes.push(floatingObj);
+
+    // 變色幻覺燈源
+    const pointLight = new THREE.PointLight(Math.random() > 0.5 ? 0xff00ff : 0x00ffff, 2, 8);
+    pointLight.position.copy(floatingObj.position);
+    scene.add(pointLight);
+  }
+
+  // 核心收集物：霓虹稜鏡
+  const artifactGroup = new THREE.Group();
+  const artMesh = new THREE.Mesh(
+    new THREE.TetrahedronGeometry(0.6),
+    new THREE.MeshBasicMaterial({ color: 0x00ff41, wireframe: true })
+  );
+  artifactGroup.add(artMesh);
+  artifactGroup.position.set(0, 1.5, -26);
+  scene.add(artifactGroup);
+
+  interactables.push({
+    type: 'artifact',
+    mesh: artifactGroup,
+    position: artifactGroup.position,
+    radius: 1.5
+  });
+}
+
+function toggleFlashlight() {
+  if (!hasFlashlight) return;
+  flashlightOn = !flashlightOn;
+  if (flashlightOn) {
+    if (!flashlightLight) {
+      flashlightLight = new THREE.SpotLight(0xff00ff, 5.0, 22, Math.PI / 4, 0.5, 1);
+      camera.add(flashlightLight);
+      flashlightLight.position.set(0, -0.1, 0);
+      flashlightLight.target = camera;
+    }
+    flashlightLight.visible = true;
+    showCenterMessage("NEON BEAM: SPECTRUM SHIFTED", 1000);
+  } else {
+    if (flashlightLight) flashlightLight.visible = false;
+    showCenterMessage("NEON BEAM: COLLAPSED", 1000);
+  }
+}
+
+function tryInteract() {
+  if (!currentInteractable) return;
+  if (currentInteractable.type === 'artifact') {
+    hasFlashlight = true;
+    scene.remove(currentInteractable.mesh);
+    interactables = interactables.filter(item => item !== currentInteractable);
+    currentInteractable = null;
+    document.getElementById('interactPrompt').classList.remove('show');
+    showCenterMessage("HARVESTED NEON CORE. PRESS [F] TO IGNITE SPECTRUM.", 3500);
+  }
+}
+
+function updatePhysics(delta) {
+  let moveSpeed = keys['ShiftLeft'] || keys['ShiftRight'] ? 6.5 : 3.8;
+  let dir = new THREE.Vector3();
+  let forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+  let right = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+
+  if (keys['KeyW']) dir.add(forward);
+  if (keys['KeyS']) dir.add(forward.clone().negate());
+  if (keys['KeyD']) dir.add(right);
+  if (keys['KeyA']) dir.add(right.clone().negate());
+
+  dir.y = 0;
+  if (dir.length() > 0) dir.normalize();
+
+  playerPos.addScaledVector(dir, moveSpeed * delta);
+
+  playerPos.x = Math.max(-5.3, Math.min(5.3, playerPos.x));
+  playerPos.z = Math.max(-32, Math.min(8, playerPos.z));
+
+  if (isGrounded && keys['Space']) {
+    velocityY = 5.5;
+    isGrounded = false;
+  }
+  
+  if (!isGrounded) {
+    velocityY -= 12.0 * delta;
+    playerPos.y += velocityY * delta;
+    if (playerPos.y <= 1.6) {
+      playerPos.y = 1.6;
+      velocityY = 0;
+      isGrounded = true;
+    }
+  }
+
+  camera.position.copy(playerPos);
+  camera.rotation.set(0, 0, 0);
+  camera.rotation.y = yaw;
+  camera.rotation.x = pitch;
+}
+
+function checkInteractions() {
+  if (interactables.length === 0) return;
+  let closest = null;
+  let minDist = 2.2;
+
+  interactables.forEach(item => {
+    let dist = camera.position.distanceTo(item.position);
+    if (dist < minDist) {
+      minDist = dist;
+      closest = item;
+    }
+  });
+
+  currentInteractable = closest;
+  const prompt = document.getElementById('interactPrompt');
+  if (currentInteractable) {
+    prompt.classList.add('show');
+  } else {
+    prompt.classList.remove('show');
+  }
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  let delta = clock.getDelta();
+  let time = clock.getElapsedTime();
+
+  if (gameStarted && !isPaused) {
+    updatePhysics(delta);
+    checkInteractions();
+
+    // 迷幻動態旋轉與視角微幅扭曲
+    acidCubes.forEach((cube, index) => {
+      cube.rotation.x += delta * (0.5 + index * 0.1);
+      cube.rotation.y += delta * (0.7 - index * 0.05);
+    });
+
+    // 視角隨著時間產生迷幻呼吸波動
+    camera.fov = 75 + Math.sin(time * 2) * 3;
+    camera.updateProjectionMatrix();
+  }
+
+  renderer.render(scene, camera);
+}
+
+function resumeGame() {
+  isPaused = false;
+  document.getElementById('pauseMenu').classList.remove('show');
+  renderer.domElement.requestPointerLock();
+}
+
+function quitToMenu() {
+  location.href = 'index.html';
+}
+
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'Escape' && gameStarted) {
+    isPaused = !isPaused;
+    if (isPaused) {
+      document.getElementById('pauseMenu').classList.add('show');
+      document.exitPointerLock();
+    } else {
+      document.getElementById('pauseMenu').classList.remove('show');
+      renderer.domElement.requestPointerLock();
+    }
+  }
+});
+
+init();
+</script>
+</body>
+</html>

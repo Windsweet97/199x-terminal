@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GALGAME.SYS // PROTOCOL_LAIN</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        margin: 0;
+        min-height: 100vh;
+        background: #030803;
+        color: #00ff41;
+        font-family: "Courier New", Courier, monospace;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    body::before {
+        content: " ";
+        display: block;
+        position: fixed;
+        top: 0; left: 0; bottom: 0; right: 0;
+        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%), linear-gradient(90deg, rgba(255, 0, 80, 0.08), rgba(0, 255, 65, 0.04), rgba(0, 150, 255, 0.08));
+        z-index: 99999;
+        background-size: 100% 3px, 6px 100%;
+        pointer-events: none;
+        animation: warpGlitch 8s infinite steps(1);
+    }
+
+    @keyframes warpGlitch {
+        0% { transform: translate(0, 0); filter: hue-rotate(0deg); }
+        50% { transform: translate(-1px, 1px); filter: hue-rotate(90deg); }
+        100% { transform: translate(0, 0); filter: hue-rotate(0deg); }
+    }
+
+    @keyframes wiredPulse {
+        0% { background-position: 0 0, 0 0, 0 0; }
+        100% { background-position: 0 50px, 50px 0, 0 0; }
+    }
+
+    @keyframes fatalGlitch {
+        0% { transform: translate(0,0) scale(1); filter: invert(0); }
+        20% { transform: translate(-10px, 10px) scale(1.05); filter: invert(1) hue-rotate(90deg); }
+        40% { transform: translate(10px, -10px) scale(1); filter: invert(0); }
+        60% { transform: translate(-10px, -5px) scale(1.02); filter: invert(1) contrast(2); }
+        80% { transform: translate(10px, 10px) scale(1); filter: invert(0); }
+        100% { transform: translate(0,0) scale(1); filter: hue-rotate(180deg) contrast(1.5); }
+    }
+
+    .ending-crash {
+        animation: fatalGlitch 0.4s cubic-bezier(.25,.8,.25,1) forwards;
+    }
+
+    #game {
+        width: min(1100px, 100vw);
+        height: min(750px, 100vh);
+        position: relative;
+        overflow: hidden;
+        background: #000a02;
+        border: 1px solid #00ff41;
+        box-shadow: 0 0 20px rgba(0, 255, 65, 0.25), inset 0 0 15px rgba(0, 255, 65, 0.1);
+        transition: all 0.3s;
+    }
+
+    #background {
+        position: absolute;
+        inset: 0;
+        background: 
+            linear-gradient(rgba(0, 255, 65, 0.08) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 255, 65, 0.08) 1px, transparent 1px),
+            radial-gradient(circle at 50% 50%, rgba(3, 8, 3, 0.4), rgba(0, 5, 2, 0.95));
+        background-size: 40px 40px, 40px 40px, 100% 100%;
+        animation: wiredPulse 20s linear infinite;
+        transition: filter .5s, background .5s;
+    }
+
+    .scene-school #background { filter: hue-rotate(0deg) contrast(1.1); }
+    .scene-night #background { filter: hue-rotate(280deg) contrast(1.4); }
+    .scene-wired #background { filter: hue-rotate(180deg) contrast(2) invert(1); animation: wiredPulse 5s linear infinite; }
+    .scene-deepwired #background { filter: hue-rotate(90deg) contrast(3) brightness(0.5); animation: wiredPulse 2s linear infinite; }
+
+    #header-bar {
+        position: absolute;
+        top: 0; left: 0; right: 0; height: 32px;
+        background: rgba(0, 20, 5, 0.9); border-bottom: 1px solid #00ff41;
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0 15px; font-size: 12px; color: #008f11; z-index: 10;
+    }
+
+    #audio-status { cursor: pointer; color: #ff00ff; text-shadow: 0 0 5px #ff00ff; }
+
+    #title {
+        position: absolute; top: 44px; left: 25px; font-size: 18px; font-weight: bold;
+        color: #00ff41; text-shadow: 0 0 8px rgba(0, 255, 65, 0.6), 0 0 15px rgba(255, 0, 255, 0.4);
+        z-index: 2; letter-spacing: 2px;
+    }
+
+    /* 立繪容器：改為 bottom: 240px 提高位置 */
+    #character {
+        position: absolute;
+        left: 50%;
+        bottom: 240px;
+        transform: translateX(-50%);
+        display: none;
+        z-index: 2;
+        text-align: center;
+        animation: float 4s ease-in-out infinite;
+    }
+
+    #ascii-art {
+        font-family: "Courier New", Courier, monospace;
+        font-size: min(9px, 1.1vw);
+        line-height: 0.85;
+        letter-spacing: -1px;
+        color: #00ff41;
+        text-shadow: 0 0 6px rgba(0, 255, 65, 0.8), 0 0 12px rgba(255, 0, 255, 0.5);
+        white-space: pre;
+        user-select: none;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translate(-50%, 0); }
+        50% { transform: translate(-50%, -8px); }
+    }
+
+    #dialogue {
+        position: absolute; left: 3%; right: 3%; bottom: 20px; min-height: 150px;
+        padding: 20px 25px; background: rgba(0, 10, 2, 0.92); border: 1px solid #00ff41;
+        border-radius: 4px; z-index: 5; box-shadow: 0 0 25px rgba(0, 255, 65, 0.2);
+    }
+
+    #name {
+        color: #ff00ff; font-weight: bold; font-size: 18px; margin-bottom: 10px;
+        letter-spacing: 2px; text-shadow: 0 0 8px #ff00ff; border-bottom: 1px dashed #008f11;
+        padding-bottom: 4px; display: inline-block;
+    }
+
+    #name::before { content: "ID::"; color: #008f11; }
+
+    #text { font-size: 18px; line-height: 1.7; min-height: 58px; color: #00ff41; text-shadow: 0 0 5px rgba(0, 255, 65, 0.5); }
+
+    .cursor {
+        display: inline-block; width: 8px; height: 18px; background: #00ff41;
+        animation: blink 1s infinite; vertical-align: middle; margin-left: 5px; box-shadow: 0 0 8px #00ff41;
+    }
+    @keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+
+    #choices {
+        position: absolute; left: 50%; transform: translateX(-50%); bottom: 190px;
+        width: min(650px, 90%); z-index: 10; display: flex; flex-direction: column; gap: 10px;
+    }
+
+    .choice {
+        border: 1px solid #00ff41; border-radius: 2px; background: rgba(0, 10, 2, 0.92);
+        color: #00ff41; padding: 12px 20px; font-size: 16px; font-family: "Courier New", Courier, monospace;
+        cursor: pointer; transition: all 0.1s; text-align: left; box-shadow: 0 0 10px rgba(0, 255, 65, 0.1);
+    }
+
+    .choice::before { content: "> EXEC: "; color: #008f11; }
+    .choice:hover { background: #00ff41; color: #030803; box-shadow: 0 0 20px rgba(0, 255, 65, 0.8); font-weight: bold; }
+    .choice:hover::before { color: #030803; }
+
+    #restart {
+        display: none; position: absolute; right: 25px; top: 44px; z-index: 20;
+        border: 1px solid #ff00ff; background: rgba(0, 10, 2, 0.9); color: #ff00ff;
+        font-family: "Courier New", Courier, monospace; padding: 6px 14px; cursor: pointer;
+        font-size: 13px; text-shadow: 0 0 5px #ff00ff; box-shadow: 0 0 10px rgba(255,0,255,0.3);
+    }
+    #restart:hover { background: #ff00ff; color: #030803; box-shadow: 0 0 20px #ff00ff; }
+</style>
+</head>
+
+<body>
+<div id="game" class="scene-school">
+    <div id="header-bar">
+        <span>LAYER_03 // GALGAME.SYS</span>
+        <span id="audio-status">[ BGM: OFFLINE ]</span>
+    </div>
+    <div id="background"></div>
+    <div id="title">放學後的選擇 // DEEP_WIRED_PROTOCOL</div>
+
+    <div id="character">
+        <pre id="ascii-art"></pre>
+    </div>
+
+    <div id="choices"></div>
+
+    <div id="dialogue">
+        <div id="name">旁白</div>
+        <div id="text"></div><span class="cursor"></span>
+    </div>
+
+    <button id="restart" onclick="startGame()">[ REBOOT_SYSTEM ]</button>
+</div>
+
+<script>
+/* =========================================================
+   多立繪資料庫 (asciiSprites)
+   能在這裡新增你專屬的 ASCII 圖像，並設定 Key 名稱
+   ========================================================= */
+const asciiSprites = {
+    // 1. 預設 Lain 立繪
+    default: `     
+⠀⠀⠀⠀⢀⡟⠁⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡆⠀⠀⠀
+⠀⠀⠀⠀⡾⠃⢴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣇⠀⠀⠀
+⠀⠀⠀⣸⠁⢠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀
+⠀⠀⠀⡇⡀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀
+⠀⠀⢸⣵⣷⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀
+⠀⠀⣼⢿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀
+⠀⠀⠉⢸⢼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⢹⣿⣻⠉⠻⣿⡿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀
+⠀⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠃⣼⣿⡇⠀⠘⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀
+⠀⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠇⠀⣿⢻⠀⠀⠐⣿⡇⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠋⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀
+⠀⠀⠀⠘⠃⠙⢿⣿⣿⣿⣿⣿⣟⣙⢛⣿⠀⠀⣿⢸⡀⠀⠀⢻⡇⢺⣹⣿⡏⣿⣿⣿⣿⣿⣿⡏⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡏⠀⠀
+⠀⠀⠀⠀⠀⠀⠈⢿⣿⣿⣿⣟⠉⠙⠻⣿⣶⣤⣿⡋⠃⠀⠀⢹⠀⢸⡟⣿⠃⣿⠿⣿⣿⣿⢹⣿⡇⠀⢨⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠈⣿⣿⣿⣿⢀⣤⣄⡀⠀⠉⠛⢿⣆⠀⠀⣼⡄⠈⢁⣿⡄⠛⠀⠀⠹⣿⠈⠿⠀⠀⠈⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⢠⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⣿⡿⣿⣿⡈⢙⣿⣿⣷⣄⣰⣄⠈⠃⠀⠀⠀⠀⠀⣿⠃⡤⡶⠷⠿⣿⣷⣦⣤⣀⠀⠟⠙⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⡞⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⢿⠃⢻⣿⡇⠙⣾⣿⣿⣿⣿⣿⡧⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⡤⠤⠉⠙⠛⠿⣶⣤⣈⢻⣿⡿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠋⠈⣿⣿⣿⣿⡏⢸⠃⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⢸⡀⠀⢻⠀⠀⠉⠉⠉⠉⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠛⠻⣷⣤⣤⣀⠀⠀⠉⠙⠻⣿⣇⣿⣿⣿⣿⣿⣿⣿⣿⠇⣸⢡⣿⣿⣿⣿⡇⡎⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⠀⠀⢿⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢲⣿⣾⣿⣿⣿⡷⣦⣤⠀⠘⠆⣽⣿⣿⣿⣿⣿⣿⣿⠞⢁⣾⣿⣿⣿⣿⣇⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣧⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠻⠿⠿⢿⠿⠟⠃⠀⠀⠀⢿⣿⢿⣿⣿⣿⣿⡟⠁⣠⣿⣿⣿⣿⣿⠋⣿⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⣷⡀⠀⠀⠀⠀⠀⠀⢠⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢼⣿⣿⣮⣛⡻⣿⣷⣿⣿⣿⣿⣿⣿⡏⠀⢹⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⣷⣄⠀⠀⠀⠀⠠⣟⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⢹⣿⡿⣫⣿⣿⣿⣿⣿⣿⣿⡏⣿⡟⠀⠀⠈⠁⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢿⣧⡀⠀⠀⠄⠈⠛⡿⠟⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡜⢸⣫⣾⣿⣿⣿⣄⠉⠉⠙⠟⠀⠿⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠻⣆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣞⡠⣿⣿⣿⣿⣿⣿⣿⡳⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣿⣷⣄⠀⠀⠀⠈⠙⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⣶⠿⠋⣀⣿⣿⣿⣿⣿⣧⠟⡇⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⣶⣿⣾⣿⡟⢦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠤⣖⣮⠟⠋⣡⠴⠚⢁⣿⣿⣿⣿⣿⣟⣿⡇ⷷ⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣤⣾⣉⣼⣿⣿⣿⣿⡇⠀⠉⠳⢤⣄⣀⣀⣀⣤⣰⣠⠼⠿⠚⠋⣁⡠⠖⠋⠁⠀⠀⣸⣿⣿⣿⣿⣿⠷⣜⡆⡷⠈⠦⡠⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⢀⣠⠤⣶⣞⣩⣶⣿⣿⣿⣿⣿⣿⷏⠀⠀⠀⠀⢳⡄⠀⠁⠁⠀⢄⣤⠤⠖⠋⠁⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⢿⣿⣆⡀⠘⢦⡀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⣀⡤⠚⠉⠀⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡟⠀⠀⠀⣠⣶⣿⣿⣗⠒⠚⠋⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣾⣿⣿⣿⣿⣿⣿⡿⣿⣿⣿⣿⣤⡀⠙⢦⡀⠀⠀⠀⠀
+⠀⠀⠴⣚⣥⣴⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⢀⣤⣾⣿⣿⣿⣿⣿⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⡀⠱⣄⠀⠀⠀
+⣠⣤⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣴⣿⣿⣿⣿⣿⣿⣿⣿⣇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡀⢸⢣⡀⠀
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣾⡃⠉⠀
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⡀⠀⠀⠀⠀⠀⠀⢀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⠀⠀
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡉⠒⠦⠤⠤⢤⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣓⠀
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧⠀⠀⣠⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⡌
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣽⣿⣍`,
+
+    // 2. 預留立繪 1 (在此填入第二張 ASCII 藝術)
+    wired: `
+    ⠍⠊⠈⠡⠁⠒⠀⠀⠀⠠⠀⠀⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⢯⡽⣞⡭⣗⣻⣿⣿⢳⣟⡼⢃⢎⡕⢊⡱⣇⠠⠀⠄⠠⠀⢸⠿⠀⠀⠀⠀⠀⠀⢀⡀⢼⣿⠀⢀⠀⢠⠀⠈⢈⠉⢀⠁⠀⡄⠀⠀⠀⠐⣾⣿⡏⠀⡀⢀⠉⣿⡜⣿⠿⣟⢿⢂⠉⡍⡐⠠⠄⡡⠂⠄⢺⣿⣿⡟⠉⢉⠉⡍⠙⡉⢻
+⠄⠐⠀⠀⠠⠀⠀⠀⠀⠂⡐⠈⠐⢀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠂⠀⠀⠂⠀⢼⣧⣛⢶⡹⣎⣽⣿⣿⢣⡟⣸⠡⡚⢬⠁⢾⡁⢂⠡⠈⠒⠀⠹⡆⠀⠀⠀⣀⠠⠀⠀⣴⣿⡟⠀⡈⠀⡻⠀⠀⠂⡐⠠⠀⠐⡄⢆⠀⢀⠀⠄⣿⡷⠀⡐⢂⠂⣽⢺⡽⢒⡌⡾⢀⢂⡐⠄⢣⠐⡁⢂⡐⢨⣿⡧⠐⢈⠂⡔⢈⡐⢀⢺
+⡐⢀⠀⡀⢀⡀⠀⠀⢠⠀⠤⡀⠥⣀⠠⠀⠀⡀⠀⢀⠠⢀⠀⠄⡀⠄⢠⠀⠀⠀⠀⠄⠀⠀⠀⠀⣾⠳⢯⠛⡵⢣⠌⡽⢣⠃⡜⠠⢁⢒⣠⣩⣶⣥⣆⣶⣴⣒⣓⡆⢜⢠⣄⡀⡀⠀⠁⡀⣿⣿⡇⠀⠁⢰⠇⠀⠂⣁⠠⠑⠈⡐⢦⡍⠀⠂⣠⣎⡹⠀⠒⢀⠂⡀⡷⢣⠜⣡⡾⢷⠈⠄⠠⢁⢢⢀⠡⠠⠄⢹⣿⡃⠁⢌⠢⠔⠂⠠⠀⢪
+⠠⠀⠀⠀⠀⠀⠀⠀⠀⠈⠄⠐⠠⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢲⢉⠃⠈⢂⣡⣬⡴⢷⣶⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣾⣿⣵⠤⣂⣰⡿⣿⡇⠀⠠⡑⡂⠀⠴⢩⡶⣌⢂⣐⣿⠄⠀⡤⣹⡱⣏⠀⠃⠄⢂⠸⡅⠪⣜⣯⢿⡧⠈⡌⠡⠀⢦⢌⠣⠗⡈⢸⣿⡄⠁⢊⠠⠀⠁⠂⠀⣳
+⠡⠀⠀⠀⠠⠀⠀⠀⠀⡀⠐⢀⠐⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣠⣤⢶⠟⠋⠉⠀⠀⠈⠀⠤⠚⠳⣭⣻⣽⣿⡿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣯⣟⣿⡇⡉⡔⢱⡉⢂⠛⡖⣹⢺⣷⣾⣿⢨⣐⣡⠦⣱⡏⠄⡉⢀⠢⣜⣭⢃⣾⢽⣟⡦⢁⠂⢃⠈⡶⢨⠇⠠⠄⢹⡿⣓⠀⠰⡀⠀⠀⠐⠀⡧
+⢂⠁⠀⠀⠀⠈⠀⠀⠐⠀⢁⠠⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣴⠾⡛⠱⣌⠲⡘⠉⠄⠀⠀⠀⠀⠀⠀⠀⠀⠉⠉⠠⠜⢋⢋⣩⢏⣳⡹⣟⣻⣿⣿⣿⣿⣿⣿⣿⣿⣷⣮⣔⠓⡚⠛⠻⠷⣿⠷⣿⣿⣿⡿⢾⣵⣷⢿⣿⢚⠛⠷⣚⣿⣟⡾⣟⣾⣿⣷⣨⠄⢃⠀⣟⣼⠠⠑⠂⣿⣷⠩⡄⠲⡄⢈⠀⡐⠠⣏
+⢂⠀⠠⠀⠀⠐⠀⠀⠠⠐⡈⠄⡈⢀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠠⣰⣶⡿⢏⣥⣣⣍⠳⡬⢣⡜⡡⢌⡀⠂⠀⠀⠄⡀⠀⠄⢂⠃⠄⡰⢊⠎⣔⣩⣔⢣⡝⢲⣛⢾⣻⣿⢿⣿⣿⣿⣿⡿⣿⣿⣦⠦⢀⠡⢀⠸⡰⢿⣯⣿⠏⢀⠙⠛⠺⠩⢼⡥⡭⢾⣟⠻⠳⣞⠻⠶⠻⢾⣦⣼⣭⣧⣴⣤⣦⣿⢳⡘⢤⣁⡄⢂⡐⣀⢘⠃
+⢂⠀⠀⡀⠀⠀⠀⠀⠰⢀⠰⢠⡐⠂⠀⠀⠀⠀⠀⠀⠀⠀⠠⠀⠀⠐⣀⣶⣿⡿⡷⣝⢯⣞⡵⣞⣳⢭⣳⢼⣱⣋⣖⣓⠳⡭⢶⢠⢇⣞⡰⡉⡜⣰⣣⢞⡯⣷⢯⣟⡮⢳⡜⢪⡝⢯⢻⡜⣿⣿⡆⢿⣿⣿⣿⣷⣅⠢⠌⢲⣙⢾⣿⣿⠀⢂⠘⡀⢃⠒⢠⠠⡐⢀⣿⠈⡅⢂⠃⡌⠐⠄⠀⠋⠛⠻⢯⣿⣷⠉⠂⡉⠄⢘⠈⠃⡙⢩⠎⡓
+⢂⠀⠀⠀⠀⠈⠀⠀⠐⠠⠐⡀⠰⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣵⣿⣿⢯⡳⣝⣮⣟⡾⣽⡞⣧⣟⢮⡷⣣⣟⡶⣽⢯⡽⣏⡿⣾⣭⢷⣻⡝⣦⣳⢯⣾⣽⣻⢾⣍⠷⣾⣻⣽⣲⢯⡜⢬⣳⢛⣼⣻⣿⣿⣿⣿⣯⣃⢞⢬⣻⣾⡧⢀⠂⢐⠠⢈⢰⣤⠒⣈⣤⣿⠀⠜⠠⢌⠠⠁⠌⠒⠈⠄⠐⡀⢸⡟⠀⢂⠀⠂⠁⠂⠡⠐⠁⠌⠁
+⠂⡀⠐⠀⠀⢈⠀⠀⠘⠀⡐⢀⠡⠃⠀⠀⠀⠀⠠⠀⠀⠀⢠⢸⣾⣿⣟⣯⡾⣵⢫⣖⢯⣞⣳⡽⣳⢯⢿⡽⣳⢯⢿⡽⣯⢿⣽⣻⢷⣯⢿⣳⡿⣽⣯⣟⡷⣯⣟⣯⢯⣟⣷⢿⣾⣽⣯⣟⢮⣳⣯⢾⣿⣿⣿⣿⣿⣿⣷⣊⡜⣿⣿⠃⠠⠈⠤⠁⠆⡍⡞⢧⡐⠟⡿⠀⡊⠐⡀⠡⠈⠄⠈⠄⠈⡐⠀⣼⡇⠀⠄⡀⠂⠌⢠⠁⠄⡉⠀⠄
+⠡⠀⠀⠀⠀⢀⠀⠀⠘⠀⡀⠂⠰⠀⠀⠀⠀⠀⠀⠀⠀⠀⣲⣿⣿⡿⣽⣾⣻⣟⡷⣞⡷⣞⣧⣟⣧⣻⢧⣿⣽⣻⡾⣽⢻⣻⢾⣽⣻⡽⣟⣿⣽⡷⣿⢯⣿⢯⣿⣽⣻⢾⡽⣯⣟⡷⣯⣞⣯⢷⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⡼⣼⣿⠀⠐⠁⢂⠉⡔⢀⠹⢞⡴⠀⡇⠐⣀⠂⠄⠁⢀⠂⠀⡈⠀⠄⠐⣼⠁⠀⢂⡀⠆⡈⠄⡂⠠⢀⠁⠀
+⡁⠄⠀⠂⠀⠠⠀⠀⢈⠀⠐⡀⠈⠄⠀⠀⠀⠀⠀⠀⣄⣿⣿⣿⡿⣽⣷⣻⣽⡾⣽⢯⡿⣽⢾⡽⣾⣽⣻⢮⣷⢯⡿⣽⣟⣿⣻⣯⣷⢿⣟⣾⣳⣿⢯⣿⢯⣿⣻⣞⣯⣟⣿⣽⣻⣿⣿⣿⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⢺⡏⠠⠘⠀⢊⠘⡀⠂⢄⠈⡳⣵⠇⠐⠄⠂⢀⠂⠀⠀⢀⡀⠄⠂⠀⣿⠀⡁⠦⠘⠠⢁⠤⡀⠅⠌⠀⠐
+⠐⠀⠀⠀⠀⠠⠀⠀⢀⠂⠁⠄⠡⠀⠀⠈⠀⠀⠠⣄⣾⣿⣿⣟⣿⣻⣷⣻⣷⣻⡽⣯⢿⣽⣻⣽⡷⢯⣟⡿⣾⣻⣽⣟⣾⢿⣽⡷⣿⣯⡿⣯⣿⢾⣿⣿⣻⣿⣿⣿⣯⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣇⣤⣤⣥⣶⣶⣶⡿⢾⢫⡕⣯⣄⠈⠐⡀⠀⠀⠀⣜⡄⡍⠀⠄⢂⣍⠀⡜⠠⢈⠁⡂⢰⡁⠌⠐⢀⠁
+⡁⠠⠀⠁⠀⠐⠀⠀⢠⠀⢁⠂⠄⡁⠀⠀⠀⢐⣰⣿⣿⣿⡿⣾⢿⡷⣟⣷⣻⢼⣻⣟⡿⣞⣯⣿⣽⣻⢯⣿⣽⣯⣷⡿⣯⣿⣟⣿⣯⣷⣿⣟⣯⣿⣿⣷⡿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡙⠛⠿⢿⣿⣿⣿⣷⡿⢶⠿⠾⢿⣎⣁⣀⠀⣀⠀⠬⢉⣀⠠⠌⣿⢎⠂⠄⠒⣀⠣⠐⢠⠃⠐⠠⢀⠊
+⠠⠀⠀⠀⠀⠠⠀⠀⢀⠂⢈⠔⠠⠀⠂⠀⠀⢸⣾⣿⣿⣿⣻⣿⣟⣿⢿⣯⢟⡾⣽⣯⢿⣻⢷⡿⣾⡽⣿⣯⣿⣿⣷⢿⣻⣷⣿⣯⣷⣿⣿⣾⣿⣿⣿⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧⠐⡠⠂⡉⢿⣿⡁⠴⠢⠎⡁⠒⢈⡩⠤⠊⣁⢎⣲⡀⠄⡒⣠⠿⣮⣥⣼⣦⣥⣃⣭⡔⣠⠁⠂⠌⣰
+⢁⠀⠀⠄⠀⠀⠀⠀⢈⠠⠄⠌⠠⠀⠂⢀⢺⣿⣿⣿⣿⣿⣿⣿⣻⣾⣿⣿⢮⣽⡷⣿⣻⣯⢿⣽⣳⡿⣟⣿⣿⣿⣯⣿⣟⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⣻⣿⣿⣿⣿⣿⣿⣿⣿⡄⠐⢂⢐⢩⣿⠄⢨⠑⠂⠄⠊⠄⡀⠀⠉⠁⢾⣽⠙⠛⠓⠛⠛⠞⠻⣯⣟⡷⢛⢮⡕⣣⡝⡹⢌⡥
+⠄⠀⠀⠀⠀⣀⠀⢂⢈⠀⠌⡐⢀⠀⣁⣶⣿⣿⣿⣿⣿⣿⣿⣿⣯⣿⣿⣿⣧⢿⣻⣽⣟⣾⣟⣷⢯⣿⣿⣿⣿⣿⣿⣷⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡍⢶⣡⣞⣿⣿⣿⣿⣿⣿⣿⣧⠐⠠⢈⣿⡇⢌⠢⡘⠄⡃⢠⠜⢠⠋⠠⢀⡻⣟⠀⡈⠐⠠⢈⠂⠁⢾⢣⡗⡌⢰⡉⠀⠀⠄⠀⠀
+⠢⢀⠐⡀⢁⠀⡐⠄⢨⠀⠂⡐⠬⢀⣿⡿⠟⣽⣿⣿⣿⣿⣿⣿⣷⣿⣿⣿⣯⣿⣿⣿⣾⣿⣿⣯⣟⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡷⣼⣿⣿⣾⣻⣿⣿⣿⣿⣿⣿⣿⠠⢘⠈⣿⡏⠤⠱⠐⠂⡄⠁⢼⠂⠶⡠⢄⡻⡼⠀⠄⡁⠂⡄⡉⠐⠸⢧⡹⡜⣽⡃⠄⠁⠀⠀⠀
+⠔⠂⠐⢀⠂⠌⠠⡅⠠⠀⠒⠀⣴⠿⣯⣧⢔⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣞⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧⠠⠈⢿⣟⡰⠐⢡⠡⢄⠃⣜⠻⠴⠡⢊⣝⠠⢀⠂⠄⠃⡈⠤⠘⠠⠡⠼⣝⣾⠅⡌⢂⠁⠀⠀
+⢀⠒⡈⠆⡌⢢⡡⠦⠱⠀⠉⣈⠁⠀⣿⣧⣸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣾⢿⣿⣿⣿⠹⣿⣿⡀⠱⢸⣯⠇⡁⠢⢀⠣⣌⢨⣁⢋⠳⢬⣿⠁⠀⡄⠈⠡⠌⠠⢈⢁⠂⡄⠙⣾⡉⡐⢀⠊⠠⢀
+⠒⠓⠈⠉⠀⠁⢀⣀⢰⠆⠁⡀⠆⠀⣿⡫⣽⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢀⢋⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣟⣿⣾⣿⣿⣿⣿⣻⣿⣿⣿⠇⣿⣿⡯⣥⢫⡿⢰⣁⠰⣓⡿⣘⢷⡻⢮⡐⣾⠃⠐⢠⠌⠒⠡⢀⠑⡀⢂⠐⠠⢁⡿⡀⠌⡐⠌⡁⢂
+⠤⠤⠐⠂⡌⠉⣄⢣⢺⠀⠀⠆⠂⢰⣿⢱⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡗⠠⢈⢼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣟⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣿⣿⣿⣿⠛⠾⣿⣿⡟⢥⣙⠶⣯⣿⣮⣟⣿⣻⣟⣷⣎⣽⣾⢤⣄⣜⣁⡒⣃⡤⢽⣀⡰⠀⣡⠿⣄⢣⣈⣴⣈⢤
+⠀⠆⡌⡸⢄⢣⠘⣦⣹⠄⠈⠄⠃⠸⣿⢽⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡯⢼⣿⣿⡏⠐⡀⠎⣿⣿⣿⣿⡟⣽⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠟⣼⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠐⢰⢻⣧⠀⣾⣷⢊⠽⣻⣿⠛⠟⠿⠭⡏⣉⣉⢻⡄⠦⢤⣩⣱⣞⣣⣛⣿⢶⡣⣟⡴⣣⣞⣧⣿⡸
+⡘⡴⣒⠹⣎⠶⣹⢶⣻⠄⡈⠄⠃⠀⣿⣎⣿⣿⣿⣿⡟⣾⣿⣿⣿⣿⣿⠧⣉⢿⣿⣗⠂⠐⠌⣿⣿⣿⣿⢋⡼⣿⣿⣿⣿⣿⣿⣿⣿⡿⢃⡞⠄⣫⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢯⡿⣽⣾⣿⣿⣿⣿⣿⣿⣧⠀⡂⠈⠹⢦⢼⣿⣷⣾⣿⠏⡀⠎⢢⠡⡀⠀⡈⠁⢸⡓⡈⠉⠹⣭⠉⢉⠉⡀⠁⡈⠙⢡⢋⡽⣇⠹
+⡱⣚⠴⣛⠼⡳⣭⢷⣿⠀⢠⠈⠐⠀⣿⢣⡙⣹⣿⣿⡓⡿⢿⣿⣿⣿⣿⢇⡘⢏⣿⡟⣀⢩⠀⣹⣿⣿⣟⠲⣘⣿⣿⣿⣿⣿⣿⣿⣿⣥⣃⣔⣂⡐⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣟⣶⣿⣿⣿⣿⣿⣿⣿⣿⡿⣿⡀⠡⢈⠒⠄⠀⣩⣿⣿⡇⠰⡁⠎⠤⠑⡀⠂⠄⢂⠀⢱⠘⠂⠌⡗⠀⠄⠂⠠⠁⠈⠱⡠⢎⣽⣏⠐
+⡳⡭⢯⣝⡳⣝⢮⣟⣿⠀⠠⠈⠅⠀⡷⢣⠜⡸⣿⡿⡐⢍⠾⣿⣿⣿⣿⣷⣾⣦⣜⣿⠀⠰⠀⡅⣿⣿⡏⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣛⡿⣛⠟⡿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣾⣿⣿⣿⣿⣿⣿⣿⣿⡗⢹⣟⠀⠔⡈⠂⣼⣿⣿⣿⣇⠁⠤⢉⠰⠠⢁⠂⠌⡀⢈⣀⡣⠜⢀⠎⠠⠈⠄⠀⠁⠀⢺⢰⠸⣞⡧⠈
+⡷⣹⢏⡾⣽⡹⢮⣟⣾⡀⠂⡁⠆⠀⣿⠅⡎⢱⣿⡧⢑⣬⡶⠿⢿⣿⣿⣝⣮⣹⡿⣿⣷⣤⡁⠰⢹⣿⠡⢚⢻⠿⣿⣿⣿⣿⣿⣿⡿⠿⠿⣿⢿⣤⣌⣽⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠯⠛⠁⠠⠤⠐⡀⠻⢿⣿⣿⡇⠀⠆⣀⠡⡰⠀⡌⢠⠐⣸⣿⣿⣬⡰⠃⢀⠡⠀⠀⠀⠀⡽⡘⢼⣣⡇⠀
+⣿⣹⣞⣟⣳⢯⣛⡾⣽⠀⠄⡐⠂⠀⡷⡘⣄⣣⢿⠗⠋⠁⢀⣠⠍⣿⣿⣿⣟⠻⣿⣿⠿⣿⣿⣇⢹⠇⡑⡈⢄⠩⠐⠻⣽⡋⣿⣿⣷⢀⣀⣥⣷⡶⠀⠹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠍⣻⣿⣿⣿⣿⣿⣿⣿⣿⣿⡈⠅⠀⠐⢀⣌⡁⠂⢭⣿⣿⠀⠒⡀⠄⡀⢳⡁⠒⠤⢂⢼⣿⣻⣿⠀⠡⠠⠐⠀⢡⠄⡎⡱⣍⢺⣽⡂⠡
+⣗⡳⢾⡽⣹⣎⢷⣻⣹⠄⠀⢰⠁⠀⡷⠟⠋⠁⣸⣄⣤⣶⠾⢛⡈⠆⣿⣿⣿⣾⡸⣿⣷⣶⡿⢿⣆⠄⢂⠡⡀⠌⠡⠀⡄⠉⡙⠛⠛⠛⠛⡉⢡⠐⢌⠠⣙⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡏⠄⣹⣿⣿⣿⣿⣿⣿⣿⣿⣿⡷⠃⠾⢯⣤⣀⣤⣼⡾⣿⣿⣧⣤⣤⣐⡈⢱⣎⡽⣲⢡⢾⣿⣿⡇⢀⠃⠠⢁⠃⡜⠤⢙⠠⣙⡾⡿⠠⢁
+⣯⢹⡭⣟⡵⣎⢳⡷⣸⠃⠈⢂⡀⠀⣧⣴⣶⣿⡿⠛⢩⡐⠬⠒⡌⣘⣬⣿⣿⣿⣧⠈⠁⠄⠐⠠⣿⠂⢄⢒⡀⠢⢀⠡⠐⠠⠐⠀⠰⠈⠄⣁⠢⠈⡄⠒⣥⣿⣏⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠇⠠⣽⣿⣿⣿⣿⣿⣿⣿⡿⠧⠁⣠⠆⠀⠈⠉⠉⠛⠷⢷⣮⣧⠤⠈⠙⠻⠿⢷⣿⣾⣽⣾⣿⣿⣃⢒⡳⠼⠤⢌⣐⢀⠂⡔⣭⢟⣷⠡⢌
+⣧⠳⣜⢧⡻⣌⢧⣻⢼⠃⡁⢂⡄⠀⡿⢞⢩⠠⡐⠡⢓⢈⣦⡽⠞⣋⣥⠾⣿⣿⣿⣇⠀⠍⢠⠁⣿⠀⣯⠆⣼⡄⠠⠀⠂⠡⠄⠈⡄⠡⠒⠠⢀⠃⡄⢣⠻⡿⣘⡾⣿⣿⣿⣿⣿⣿⣿⣿⣯⠓⡀⢩⣿⢿⣿⣿⣿⣿⣿⡇⠀⠀⡿⠀⠀⠀⠂⠐⠀⡀⠄⠀⠉⠀⠐⢀⠀⠄⠠⠀⡁⢎⢹⠛⡿⢏⠳⠶⠛⠶⡤⢢⠌⣼⡉⡔⣨⢿⡹⢦
+⡷⣻⢌⡷⣽⡘⢶⣹⢨⢃⠀⣁⠀⠀⣟⠨⡁⢆⣱⡼⠞⣫⣥⠾⢛⠩⣄⢣⢻⣿⣏⢿⣇⢀⢀⠚⢷⣬⣧⣽⣴⡇⢀⠃⠌⠠⠈⢄⠠⠁⠌⡐⠡⠈⠔⣃⢣⠳⣭⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⢃⡐⠼⠃⠼⣿⡟⣞⣿⣿⣇⡀⠘⠇⠀⠀⠀⠌⠀⠀⠀⠀⠀⠁⠀⠄⠂⠀⠌⠠⠁⠜⠨⣹⣌⢳⢃⠸⠆⠁⠂⡐⠡⠊⡀⢈⡉⠑⢧⡘⠙
+⠀⠀⠈⣷⢣⡝⢎⣳⢸⠀⡠⠐⡀⠀⣯⡵⢞⣛⣵⠶⡛⢍⡠⡘⡄⢳⡈⣶⠛⣿⣿⡌⠻⣮⡀⢢⠄⠌⠛⠟⡉⠠⠀⠆⡐⠠⢁⠂⠠⠉⡐⠠⢡⢁⠺⢄⣫⣷⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠆⣅⠢⢌⡐⠻⣿⣜⣻⣽⣿⣇⠀⠂⠀⠀⠀⣀⡀⠀⠂⠀⠀⡹⠀⠀⡀⢁⠈⡄⢉⠸⠄⡘⢷⣧⡈⠰⠁⠈⠐⡀⠘⢀⠐⠠⠀⠂⡍⠐⠀
+⣶⡀⠀⢸⢧⡋⣜⣣⢸⡐⠀⠸⠀⠀⣿⡾⠟⣋⠰⡄⠙⡄⢢⠑⡌⢆⠰⣿⢩⣿⣟⣷⠥⡍⠻⣦⣘⢀⠃⡌⣦⣅⣠⣐⡀⢁⠠⠈⠄⠡⢀⡁⠂⡄⢳⣾⣿⣿⣽⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣏⡖⢥⠒⡬⡱⢹⢷⣏⡾⢿⣿⣧⡐⣀⠈⠠⠉⡙⢶⣄⠀⠀⡇⠀⠀⠐⢀⠐⡀⠂⡅⠳⠀⠌⣷⣧⠀⠁⠌⠐⠠⠈⢀⠂⡀⠁⢰⡉⠀⠀
+⣻⠄⠀⢸⢧⡹⢄⡟⣸⠡⠌⢰⠀⠀⡟⡴⡉⢔⠨⠄⠓⠌⢄⠃⢌⢂⢱⡟⡥⢹⣿⣏⢞⡿⡴⣦⡙⠻⣦⣐⠠⢈⠉⡉⡙⠛⠛⠀⠌⡐⠄⢂⢡⡾⣟⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡝⣮⠳⡸⢔⢣⢏⡺⡜⣝⢻⢿⣿⣿⣶⣗⣰⣦⣔⣀⠂⠐⣠⠃⢀⠀⠊⠄⢰⠠⢡⠐⢂⠡⠘⣼⣿⠀⠁⠄⠐⠃⡜⢢⠀⠀⡁⢰⡁⠀⠀
+⣟⠀⠀⢸⠧⡜⢪⢼⣸⣅⠂⣽⠀⠀⡟⢤⢃⡌⠘⡀⣨⠔⠂⡉⠄⢂⠈⣿⡐⢯⣿⡹⢎⡷⣽⣿⢿⡑⣦⠙⡻⣦⣅⠤⠁⡌⠠⠑⠠⠂⣌⡶⡟⣵⣾⣿⣿⣿⣿⣿⣿⣿⢿⣿⣿⣿⣿⣿⣿⡝⢮⣳⠹⣌⠳⣎⠵⣚⠴⣋⣾⣿⣿⣿⣿⣿⣿⠿⠿⠿⢷⣅⠂⠌⢤⠒⣈⣤⣧⡀⡌⡄⢂⢡⣿⣿⠀⡈⠄⢈⠒⡌⡡⡃⠀⡄⢰⠀⠀⠀
+⢋⡐⠀⢸⢣⢃⠇⣾⣸⠇⡃⣼⡄⠀⡏⠄⣠⢀⠞⢁⠀⠐⠀⠀⠀⠀⢸⣷⡙⢮⣣⡝⣧⢿⣒⢿⣿⣿⡽⣧⢱⡌⠙⠻⣶⣤⣥⣌⣁⣶⣼⣷⠿⠛⢉⠹⣻⣿⣿⣿⡿⣭⣿⣿⣿⣿⣿⣿⣯⢟⣣⢓⡏⣜⡳⢌⡳⣌⣳⣾⣿⣿⣿⣿⣿⠻⠠⢉⠠⢁⠌⠩⡛⢶⣄⠂⠫⢼⣯⣟⣻⡟⣼⣿⣿⣧⠀⠐⣄⠈⡒⢄⢡⠃⡡⢀⠸⡀⠈⠀
+⣾⠁⠀⢨⠣⡍⠚⣼⣿⡥⢇⢸⡇⠀⣏⢐⡠⠂⠈⠀⠀⢀⠀⠄⠠⠀⠼⣿⡜⣯⡱⣏⢞⣿⡘⣮⢻⣿⣿⣷⣻⢷⡆⡱⣤⡌⢈⠉⢉⠉⠉⡀⠠⣈⣦⣷⣿⣿⣿⣿⡷⡸⣷⣿⣿⣿⣿⣿⣿⠣⣌⠧⣘⠆⢍⠠⢐⣷⣿⣿⣟⣷⣿⣿⢁⢂⠁⠊⠠⠁⠒⠠⠁⡄⠍⠷⣦⡐⠀⢎⠻⣿⣏⣿⣿⣷⠆⣆⣠⢡⡘⢀⠎⡅⣂⠥⡚⠀⠐⠀
+⣿⠀⠀⢨⠓⣈⠱⣸⣿⠼⣌⢺⡇⠀⡏⠁⢀⠀⠐⠀⠀⠀⠀⠀⠀⢠⢟⡿⣹⢳⡱⢎⡿⣧⠹⣬⣛⣿⢻⣿⣿⣯⣷⣱⣾⡁⠄⡂⠆⢄⠂⣠⣿⣿⣿⣿⣿⣿⣿⣿⠥⢳⣽⣿⣿⣿⣿⣿⣯⠑⠤⢂⠄⡈⢄⣲⣿⣿⣿⣛⣾⣿⡟⣡⠂⠠⠘⠈⠄⡑⠈⠄⠡⢀⠌⢂⠹⣿⣧⡌⠑⠂⠹⣿⣿⡏⠸⠤⠦⠡⠙⠚⠜⠣⠇⢤⣋⡔⢢⡅
+⣽⠀⠀⢘⠰⣀⠱⣸⣿⡿⣬⣿⡇⠂⡇⠀⠂⠀⠀⠁⠀⠀⠀⠀⠀⣸⢺⡥⣙⠮⣷⣹⣾⢯⠗⡧⡿⢎⡷⡘⠿⣿⣯⣿⡿⡌⢆⠡⠋⢠⣶⣿⣿⣿⣿⣿⣿⣿⣿⢣⢊⠱⣾⣿⣿⣿⣿⣿⣇⢣⠒⣀⠂⢠⢰⣿⣿⣿⢣⣿⣿⢿⡘⠄⠀⠂⠌⡐⠠⠐⢈⠐⣀⠂⠌⡀⢂⠘⡻⣿⣄⠂⠄⣿⣿⠃⠀⠄⢀⠐⡀⠈⠄⠀⡘⠂⡴⣈⠯⡽
+⣯⠀⠀⢨⡑⠤⠂⣽⣿⣿⣳⣿⡧⣉⡇⠀⠀⠄⠀⠠⠀⠀⠀⠀⠀⡿⣼⢰⣩⠃⢜⣯⣿⢎⡟⣼⢍⡳⠖⣍⠳⡈⠿⣿⣷⡉⠆⢋⣴⡟⠩⣿⣿⣿⣿⣿⣿⢳⡏⢰⠀⢃⣾⣿⣿⣿⣿⣿⢎⡆⠳⢠⠩⠥⣾⣿⣿⣯⣿⣿⣿⠟⠀⡈⠄⠡⠀⠄⠡⠈⠠⢀⠄⠂⢂⠡⢀⠘⡄⢻⣿⣧⠂⣿⡿⠀⢀⠌⡀⠄⠀⠄⠀⠂⠄⠰⡑⠼⣡⣀
+⣞⠀⠀⢠⡙⠀⠀⣿⣿⣿⣿⣿⡗⢦⡇⠀⢀⠀⠀⠀⠀⠀⠀⠀⢨⡗⣩⡖⡧⡘⢬⣛⣿⣯⣓⡿⣌⢳⡍⡆⡱⠘⡴⡡⢞⣫⢟⡧⣾⠇⡐⣿⣿⣿⣿⣿⣿⣏⠰⢈⠀⢢⣿⣿⣿⣿⣿⣿⢣⢎⢣⠡⣁⣺⣿⣿⣿⣿⣿⣿⡟⠀⠂⢀⠠⢁⠈⡐⠠⠈⠄⡀⠂⢉⠠⠐⡈⠰⣈⠱⣿⣿⣇⢻⡟⠀⠌⠐⡀⢈⠀⡀⠂⠐⡀⠀⠛⡠⢙⡶
+⣯⠀⠀⢰⠀⠈⢐⣿⣿⣿⣿⣿⣿⣆⡇⠀⠀⠀⠀⢀⠀⠀⠀⠂⢠⣿⡶⣽⠣⡜⡃⣼⣿⢿⣿⡷⣌⠳⣼⢡⢸⢡⠓⣭⡟⢁⠂⢻⣿⠰⢀⣿⣿⣿⣿⣿⣿⣯⡐⠨⠐⣸⣿⣿⣿⣿⣿⣿⣃⠞⠄⢲⢦⣿⣿⣿⣿⣿⣿⡟⠀⠄⠁⡀⠄⠂⠠⠐⢀⠁⠂⡐⢈⡀⢂⠡⢀⠃⠤⢣⡹⣿⣿⡼⡗⠈⠄⠡⠐⢀⠂⠐⠀⠐⡀⠄⢁⢢⡭⠷
+⣿⢀⡂⢸⠀⠂⢨⣿⣿⣿⣿⣿⣿⣼⡇⠀⠠⠀⠀⠀⠀⠀⠀⢠⠾⢿⣿⣽⠗⣸⡓⣾⡿⢃⣹⣿⣜⣳⣏⠦⣱⡈⢽⣿⠃⢉⠒⢸⣿⢀⢃⣼⣿⣿⣿⣿⣿⣿⣿⡂⢡⣿⣿⣿⣿⣿⣿⣟⡌⡛⠠⡉⣼⣿⣿⣿⣿⣿⣿⡡⠈⠐⠠⠀⡐⠠⠁⠌⠠⢈⠐⡀⢂⠐⠄⣁⠂⠌⢂⠧⣙⡿⣿⡿⢧⠈⠒⠠⠈⡐⠠⠉⠄⠨⠐⠀⣹⢶⣙⠆
+⣿⣯⡗⣼⠀⡁⢸⣿⣿⣿⣿⣿⣿⣿⡇⠀⢀⠀⠈⠀⠀⡀⢁⣾⡧⢿⣻⡏⢎⡵⣩⢷⣻⡴⣫⣿⣿⣿⣿⡖⡤⣙⢲⣿⠀⠊⡄⣹⣿⣦⣿⣿⡿⢋⣼⡷⢿⠻⣿⣻⢿⣿⣿⣿⣿⣿⣿⡯⠜⢡⣦⣵⣿⣿⣿⣿⣿⣿⣷⡓⠄⢊⠀⡁⠄⢂⠡⡈⢀⠡⠀⠄⠡⠈⠄⢠⠘⡐⠈⢶⣉⠾⣽⣿⠩⣆⠉⡂⢡⢠⠁⡉⢀⠢⠜⠀⣳⢺⣃⢰
+⣿⣿⣿⢎⠂⠄⢸⣿⣿⣿⣿⣿⣿⣿⠄⢈⠀⢀⠂⠀⢁⢀⣾⣿⣧⡛⢆⢯⢸⡧⣹⣯⢷⣏⣷⣿⡟⣿⣿⣿⡰⣩⣾⡿⢁⠂⣛⣿⣿⣿⣿⠋⠞⠋⠀⠀⠀⠀⠀⠙⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢿⣿⣿⣿⣿⣿⣿⣿⣷⣌⠠⠂⡐⠈⣀⠂⡐⢀⠂⡐⠈⠄⡑⠈⠄⢂⡘⢀⠳⣌⢻⢾⣿⢱⣈⠳⣁⠲⡐⠌⣐⠢⡡⠖⣦⢛⣏⠿⠿
+⣿⣿⣿⠣⠌⠀⢺⣿⣿⣿⣿⣿⣿⣏⠄⠠⠀⠂⠠⠀⠲⣸⣿⣿⡧⣏⢄⡛⢻⡥⣿⣯⣟⣾⣿⣿⠠⣝⣿⣛⠷⣾⣿⣅⠂⣼⣿⣿⣿⡟⠳⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⣿⣿⠏⠀⠀⡀⠀⣼⣿⢿⣿⣿⣿⠿⣻⣿⣿⣇⠐⠄⢂⠀⡐⢀⠂⡐⠀⠔⠈⠄⡁⠒⠠⠌⡀⢻⠌⣭⣟⣿⠲⣜⣿⣷⣜⠠⡒⢌⡡⠱⡌⢂⢿⡆⡌⠐
+⣿⣿⣟⡣⠐⢀⢺⣿⣿⣿⣿⣿⣿⡱⠂⠀⠐⠈⠄⢨⠑⣼⣿⣿⡟⡴⣊⢮⡱⠐⣿⣳⣿⣿⣿⡷⢸⣳⢮⣿⠁⣞⣿⡛⣿⡫⣭⣿⡟⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⣿⣿⣿⡿⠃⠀⠀⠀⠀⠀⢹⣿⣿⣿⣿⣿⣷⣡⣿⣿⣿⣆⠈⠄⠂⡐⠀⠂⠤⠁⢂⡁⠆⢈⠁⠆⡑⢈⢥⢛⡴⣯⣿⡃⢼⣿⣜⡌⣓⠈⠣⢜⠱⢌⡒⣺⠵⣘⠀
+⣿⣿⡿⡄⢀⠢⢽⣿⣿⣿⣿⣿⡿⢐⠀⢁⠂⢁⠂⢘⣣⣾⣿⣿⣿⢧⣝⣿⠇⢢⣿⣳⣿⣿⣿⣿⣻⣷⣻⣯⣜⡰⢿⣇⣻⣿⣿⡟⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣾⣿⣿⣿⠏⠀⠀⠀⠀⠀⠀⠀⠀⠹⣿⣿⣿⣿⣿⣿⢿⣿⣿⣿⡆⠈⡐⢀⠊⡐⠄⡈⠄⡐⠀⠆⣈⠐⡈⢆⣙⠮⡼⣷⣿⠇⣸⣿⣿⠜⡴⠈⠒⡌⠆⠢⢜⣣⡛⢤⠁
+⣿⣿⡿⢀⠂⢌⣻⣿⣿⣿⣿⣿⡝⠄⡁⢂⠈⡀⡃⢼⣿⣿⣿⣿⣿⣟⣾⣿⠂⢼⣷⣟⣿⣿⣿⣿⣿⣿⣿⡿⡜⣇⢲⡌⠍⠿⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢿⣿⣿⣿⣿⡀⢙⣿⣿⣿⡁⠠⢌⡐⡀⠆⠡⠀⠄⡑⠈⡄⠒⡀⠞⣬⢚⣽⣿⣿⡘⠴⣫⢿⣾⠀⠥⢁⠌⠰⡁⢆⡳⡉⠆⡈
+⣿⣿⡏⠠⡑⢬⢾⣿⣿⢿⣿⣽⢊⡐⠠⢀⠂⠐⡥⣾⣿⣿⣿⣿⣿⣿⣿⣿⣌⠺⣵⣾⣿⣿⣿⣟⣿⣿⡟⢧⣻⡇⣼⡿⢀⣾⠃⠀⠀⠀⠀⡀⠀⠀⠀⠀⠀⠀⢸⣿⡿⠁⠀⠀⠀⠀⠀⢀⠠⠀⠀⠀⠄⠀⠀⠻⣿⢿⣿⣧⣈⣹⡇⠉⠛⠷⢦⣤⡡⢉⠂⣉⠰⢀⠡⡀⠃⢌⡹⣔⣫⢾⣿⣿⡜⡱⢫⡿⠣⠌⡐⠈⡄⢃⠐⢦⡹⡄⠃⠄
+⣿⣟⡆⠡⡜⡸⢾⡿⣽⢿⡾⣝⠢⢀⠆⢂⠌⣐⣧⣿⣿⣿⣿⣿⣿⣿⣿⣿⣎⣳⣿⣿⣿⣿⣿⣿⣿⡿⣘⢧⣿⣾⣿⢀⣼⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢿⣋⠝⣷⣿⣇⠠⠔⠠⠀⡈⠙⠛⢶⣦⣅⡌⠰⢀⠇⣜⢢⡳⣭⢿⣿⣿⣿⣧⢻⡷⢉⠂⢄⠃⢌⡐⣈⢶⣻⡽⡁⠄
+⣿⡞⡤⢁⢺⠱⣿⣟⣯⢿⡹⣽⠌⡐⡈⠆⡐⢨⣿⣽⣿⣿⣿⣿⣿⣿⣿⣿⣟⣼⣿⣿⣿⣿⠤⣿⣿⣗⢬⣾⣿⣿⣿⣸⠃⠀⠀⠀⠀⠀⠐⠀⠀⠀⠀⠀⠀⠀⢸⠁⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠠⠈⠀⠀⠀⠀⠈⢻⣌⠱⣽⣿⣿⣶⣤⣀⠀⠀⡀⠀⠀⠉⠙⠻⠶⣮⣬⣳⣹⡽⣯⣿⣿⡿⣿⢢⣷⠈⡜⡀⠎⡴⢌⠡⣿⢷⣏⡗⣂
+⣷⡻⢄⢃⢯⡹⣷⣻⠾⣭⢷⣹⢢⠡⡐⢌⠀⢧⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣯⣿⣿⣿⣿⡟⣴⣻⣿⣿⣞⡿⣟⡿⣼⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⠀⠀⠀⣸⣏⣶⣿⣿⣿⠠⢈⠛⠿⣷⣤⣠⠜⠀⢀⠀⢷⣆⣍⣛⠛⡛⣛⢋⡍⢲⢽⣞⡿⠰⡠⢱⠹⣸⠎⡥⣿⣻⠅⠃⠂
+⡷⣏⠎⡜⣮⢳⣯⢷⣻⡜⣧⢏⠶⣁⠒⢨⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣟⡶⣿⣿⣿⣿⣿⣯⣷⡏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⢻⣿⣿⣽⣿⣿⢂⠘⡄⠢⢄⡉⠛⢷⣦⣬⣀⠸⣯⣙⢻⠻⣍⠧⢫⡜⢃⣾⢿⡇⢣⠓⠤⢻⢜⣣⢓⣿⢇⠠⡁⠂
+⡟⡦⢛⡌⣷⣹⢾⣯⣗⢾⡹⣎⡓⢆⡑⢢⠝⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⣽⣿⣿⣿⠏⢹⣿⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⠠⢀⠌⢋⢻⣾⣿⣿⠤⠐⠠⣁⠂⠄⢃⠈⡘⠻⢿⣿⣷⣾⣧⣟⣬⣳⣧⣾⠟⣣⢿⡇⢷⡽⡞⣥⢺⡵⢫⡏⡦⢁⠄⡁
+⡽⣘⢦⣛⡼⢯⣿⡾⣽⡞⣽⣣⣛⢬⢣⢸⡭⣷⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣳⣿⣿⣿⠀⢲⣹⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠂⠁⠂⢄⠨⠄⡂⢼⣿⣿⡐⠈⠔⠠⠌⡐⡈⠤⢁⠢⠀⡍⡙⢻⣿⣿⣿⣿⣿⣯⠐⡩⢷⡍⣯⢻⡼⢦⢻⡜⣷⡘⢥⣘⠲⡀
+⢷⡹⣜⡖⣿⣫⣿⣽⣷⢻⣷⣹⢺⣬⢇⠾⣼⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⡼⢻⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⢀⠡⢈⠈⡄⢁⠆⡑⡾⣽⣿⢘⢈⠰⠁⠒⢠⠁⡂⠄⠡⡑⢠⢈⡙⡳⣿⣿⣿⣿⣏⠰⡁⢿⡐⢏⢲⢈⡹⢻⠜⡖⠏⣖⡨⢣⡕
+⣷⣹⢮⡝⣷⣻⣽⣾⢯⣷⣳⣽⢺⡼⣋⢾⡽⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣯⢰⠩⣷⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠂⡀⠄⡒⢈⠰⣈⢽⣹⢿⣿⠌⢠⠂⡁⢊⠄⢒⡈⠐⢡⠐⡁⢆⠸⣥⡙⢿⣯⣿⠇⢸⢀⠳⢌⡏⡜⠠⡜⣉⠒⡠⠈⠔⡓⢧⣿
+⡷⣯⢿⡽⣷⣿⣻⣾⣟⣾⣳⣞⢧⣽⢪⡿⣽⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧⣟⣻⣧⠄⠀⠀⠀⠀⠀⠀⠀⠠⠀⠀⠄⠀⠠⠀⠀⠀⠄⠀⠀⠠⠀⠀⠄⠂⠠⠐⠌⠠⢁⠢⠀⢂⠄⢃⡴⢣⢞⡽⣿⣿⡍⠄⠒⠈⠄⢊⠀⠄⡉⠠⠐⡀⠆⡑⢦⡙⢾⣹⣿⠂⠌⢢⢛⢤⡓⢌⠰⠇⡈⠆⠁⠎⠐⡱⣏⡶
+    
+    `,
+
+    // 3. 預留立繪 2 (在此填入第三張 ASCII 藝術)
+    glitch: `
+    ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⣤⣤⣤⣤⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⣴⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣤⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⢠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡆⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⢀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⢰⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⣸⣿⣿⣿⣿⣿⣿⣿⣿⠁⠈⣿⠾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡄⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⣿⠃⣿⣿⣿⣿⢿⣿⣿⣿⣿⣿⣿⣿⡿⣧⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠸⣿⣿⣿⣿⣿⣻⣿⣼⠤⣤⠼⠵⣿⠟⠻⢿⢾⡿⠧⢽⣿⣿⣿⣿⡇⠙⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⢿⣿⡟⣿⡏⢓⣟⣶⣶⣾⠗⠀⠀⠀⠄⠺⢿⣶⣶⡞⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠘⣿⣿⣌⣇⠀⠈⠉⠉⠀⠀⢀⠠⠀⢀⠀⠈⠉⠉⠀⣿⣿⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠰⠻⣿⣿⣿⣄⠀⠀⠐⠀⠀⠂⠀⠠⠀⢀⠠⠀⠀⢠⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠹⡿⢿⡿⢧⡀⠄⠀⠁⢀⣙⣀⡁⠀⠀⢀⡼⠛⣿⣿⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠁⠀⠁⢰⣿⣶⣦⣄⣀⠀⠀⡀⣠⣼⣾⣷⠄⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠴⣾⣿⣿⣿⣿⣿⣶⣯⣷⣿⣿⣿⣿⣿⡗⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⣀⠔⣫⠦⣹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡷⣿⣿⡣⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⢀⡠⠒⠉⠀⠀⢹⡜⡥⣚⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡙⣿⣿⠏⠀⠉⠢⢄⡀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⡸⠤⠤⢤⣀⣀⡸⢎⡵⣘⠮⣝⣿⣿⣿⣿⣿⣿⣿⣿⡿⢥⢛⣼⡏⠀⢀⣠⠴⠊⠙⢄⠀⠀⠀⠀
+⠀⠀⢀⠎⠀⠰⣆⠀⠀⠈⠉⠚⡦⢷⢾⣔⣭⣿⣿⣿⣿⣿⣿⣟⣬⠷⢮⢾⠓⠊⠉⠀⠀⢠⠆⠘⡆⠀⠀⠀
+⠀⠀⡎⠀⠀⡀⠘⢆⠀⠀⠀⠄⠻⣜⠲⣎⢼⣿⣿⣿⣿⣿⣿⣾⣥⢛⡜⡾⠀⢀⠐⠀⠀⡞⠀⠀⢷⠀⠀⠀
+⠀⠀⡇⠀⠠⠀⠀⠈⢷⡀⠀⢀⠀⠹⡗⡜⣎⠶⣹⣿⣿⣿⣿⢎⡱⣋⡼⠃⠀⢀⠀⠀⣰⠃⢀⠠⢸⡄⠀⠀
+⠀⠀⡇⠀⠀⠄⠂⠀⠀⢳⠀⠀⠀⠀⠘⢷⡘⢮⣽⣿⣿⣿⣿⣌⢧⡝⠁⠀⠀⠄⠀⢠⠏⠀⠀⡀⠀⡇⠀⠀
+⠀⠀⡇⠀⠂⡀⠐⢀⠀⠘⡆⠀⠁⠀⠄⠀⠙⠛⠻⣿⣿⣿⠋⠛⠋⠀⠀⠈⠀⢀⠀⡞⠀⠀⠠⠀⠀⢳⠀⠀
+⠀⠀⡇⠀⠠⠀⢠⡀⠀⠀⢻⠀⠀⠁⡀⠌⠀⠀⠀⢿⣿⡟⠀⠀⠠⠀⠐⠀⠁⠀⡼⠁⠀⠠⠁⠀⠀⣹⠀⠀
+⠀⢠⠇⠀⠠⠀⠀⢣⡐⠀⠘⡇⠀⠐⠀⠀⠄⠀⠾⢿⣿⡇⢠⣤⠀⠀⠂⠀⡀⣸⠁⠀⠀⠂⠀⠁⠀⡜⠀⠀
+⠀⢸⠀⠀⠐⢀⠀⠈⣧⠀⠀⢻⡀⠀⠐⠀⠠⢀⠀⢸⣿⡇⠈⠁⠀⢀⠂⠀⢠⠏⠀⠠⠐⠀⠈⢠⠆⣛⠀⠀
+⠀⢸⠀⠈⢀⠀⠠⠀⠸⣆⠀⠈⣧⠐⠀⢈⠀⠀⡀⢼⣿⡇⣠⣀⠀⢀⠠⠀⡟⠀⠀⠠⠀⠠⢠⠎⡗⢸⠀⠀
+⠀⣼⠀⢁⠂⡀⠂⠠⠀⢻⡄⠀⠸⡇⠀⠀⠀⠻⠟⣿⣿⣿⠈⠋⠀⠀⡀⣼⢡⡇⠀⠀⠀⢤⠏⢸⠃⢸⡀⠀
+⠀⣯⠀⢂⠲⣄⠂⡁⠂⢈⣧⠀⢀⢻⡀⠂⢁⠠⢸⣿⣿⣿⣷⡀⣠⣁⠀⢻⣼⠀⠠⠀⣬⠏⢠⠏⠀⡈⡇⠀
+⠀⡇⡐⢀⠂⠌⢷⠀⠡⢀⠘⣇⠠⢸⡇⠈⠄⠠⣹⣿⣿⣿⣿⣷⣉⠡⠀⢢⠏⠀⢠⡼⠃⢀⡞⢀⠐⡀⢷⠀
+⠠⡗⡈⠷⣈⠰⢈⠻⣆⠂⠌⠹⣆⢼⢋⠐⡘⢛⣿⣿⣿⣿⣿⣿⣿⠠⠁⣾⠀⣼⠋⠄⡐⣸⠃⠄⠂⠌⢸⠀
+⠀⣷⡈⡔⠩⠳⣦⢈⠹⢿⣬⡐⠙⣾⢀⠣⠠⢭⣿⣿⣿⣿⣿⣿⣿⠻⢃⣧⠟⢡⠈⡐⣰⠏⡐⣈⠐⡨⣼⡀
+⠀⠸⡇⠬⣁⠣⡐⠢⢌⠢⡙⢿⣔⡹⣇⠴⠿⣿⣿⣿⣿⣿⣿⣿⣿⢡⣿⠁⢎⠠⡑⢠⡯⠐⡰⠀⠎⣡⣿⡇
+⠀⠀⠹⣦⡑⠢⢅⠣⡘⢦⣕⡊⠩⣷⣿⡆⡱⣿⣿⣿⣿⣿⣿⣿⣿⠣⣼⠃⡌⢒⣨⣽⢀⠣⢐⠩⣰⣿⣿⡇
+    `
+};
+
+/* --- 音效系統 (Web Audio API) --- */
+let audioCtx;
+let isAudioPlaying = false;
+
+function initAudio() {
+    if (audioCtx) return;
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AudioContext();
+
+    const humOsc = audioCtx.createOscillator();
+    humOsc.type = 'sine'; humOsc.frequency.value = 60; 
+    const humGain = audioCtx.createGain(); humGain.gain.value = 0.15;
+    humOsc.connect(humGain); humGain.connect(audioCtx.destination);
+    humOsc.start();
+
+    const wireOsc = audioCtx.createOscillator();
+    wireOsc.type = 'triangle'; wireOsc.frequency.value = 432;
+    const wireGain = audioCtx.createGain(); wireGain.gain.value = 0.02;
+    
+    const lfo = audioCtx.createOscillator();
+    lfo.type = 'sine'; lfo.frequency.value = 0.5;
+    const lfoGain = audioCtx.createGain(); lfoGain.gain.value = 0.01;
+    lfo.connect(wireGain.gain); lfo.start();
+
+    wireOsc.connect(wireGain); wireGain.connect(audioCtx.destination);
+    wireOsc.start();
+
+    isAudioPlaying = true;
+    document.getElementById("audio-status").textContent = "[ BGM: WIRED_NOISE_ACTIVE ]";
+}
+
+function playBurstNoise() {
+    if (!audioCtx) return;
+    const bufferSize = audioCtx.sampleRate * 0.4;
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+    }
+    const noiseSource = audioCtx.createBufferSource();
+    noiseSource.buffer = buffer;
+
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 2500;
+    filter.Q.value = 0.8;
+
+    const gainNode = audioCtx.createGain();
+    gainNode.gain.setValueAtTime(1.8, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+
+    noiseSource.connect(filter);
+    filter.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    noiseSource.start();
+}
+
+/* =========================================================
+   Galgame 劇情資料
+   註：character 屬性可設定為 asciiSprites 的 Key (例如 "default", "wired", "glitch")
+   若不顯示立繪則填 false
+   ========================================================= */
+const story = {
+    start: {
+        name: "旁白", text: "放學鐘聲響起。教室裡的人一個接一個離開，只剩下你還坐在窗邊。", scene: "school", character: false,
+        choices: [ { text: "A 走進教室看看", next: "classroom" }, { text: "B 直接離開學校", next: "leave" } ]
+    },
+    classroom: {
+        name: "你", text: "奇怪……桌上怎麼會有一封沒有署名的信？", scene: "school", character: false,
+        choices: [ { text: "A 打開信", next: "letter" }, { text: "B 把信收起來，明天再看", next: "tomorrow" } ]
+    },
+    leave: {
+        name: "旁白", text: "你背起書包走出校門。夕陽已經快要消失了。", scene: "night", character: false,
+        choices: [ { text: "A 回頭看看學校", next: "lookback" }, { text: "B 繼續回家", next: "home" } ]
+    },
+    letter: {
+        name: "你", text: "信上只有一句電腦列印的話：「如果你看到這封信，請在明天放學後來天台。Layer 01 等你。」", scene: "school", character: false,
+        choices: [ { text: "A 答應去天台", next: "rooftop" }, { text: "B 當作惡作劇", next: "ignore" } ]
+    },
+    tomorrow: {
+        name: "旁白", text: "你把信放進書包。可是就在這一瞬間，走廊外傳來了沉重的腳步聲，伴隨著微微的靜電聲。", scene: "school", character: false,
+        choices: [ { text: "A 出去看看", next: "mystery" }, { text: "B 留在教室", next: "stay" } ]
+    },
+    lookback: {
+        name: "旁白", text: "你回頭。教學樓的頂樓天台，似乎站著一個綁著不對稱短髮的女孩，正低頭看著你。", scene: "night", character: "wired",
+        choices: [ { text: "A 跑回學校", next: "rooftop" }, { text: "B 假裝沒看到，繼續回家", next: "home" } ]
+    },
+    home: {
+        name: "旁白", text: "你回到房間。街外的路燈嗡嗡作響，你的電腦螢幕未經觸碰就自己亮了起來，顯示著一個終端機畫面。", scene: "night", character: false,
+        choices: [ { text: "A 坐在螢幕前", next: "boot_pc" } ]
+    },
+    rooftop: {
+        name: "？？？", text: "風很大。女孩轉過頭，她的雙眼空洞卻閃爍著奇異的光芒。「你真的來了。」", scene: "night", character: "default",
+        choices: [ { text: "A 「你是誰？」", next: "who_are_you" }, { text: "B 「這封信是妳放的？」", next: "the_letter_truth" } ]
+    },
+    ignore: {
+        name: "旁白", text: "你把信撕碎了。但當晚，你的手機螢幕開始瘋狂閃爍雜訊，並強制安裝了一個名為「NAVI」的程式。", scene: "school", character: false,
+        choices: [ { text: "A 啟動 NAVI", next: "boot_pc" }, { text: "B決 砸爛手機", next: "system_crash" } ]
+    },
+    mystery: {
+        name: "旁白", text: "走廊空無一人。只有舊電腦教室的門半掩著，裡面透出幽綠的光芒與巨大的散熱風扇聲。", scene: "school", character: false,
+        choices: [ { text: "A 走進電腦教室", next: "computer_lab" }, { text: "B 轉身跑回家", next: "home" } ]
+    },
+    stay: {
+        name: "旁白", text: "你坐了下來。手機震動了一下，是一條未知號碼的訊息：『Connect the wired. Knights are watching.』", scene: "night", character: false,
+        choices: [ { text: "A 回覆「什麼是 Knights？」", next: "the_knights" }, { text: "B 關機", next: "system_crash" } ]
+    },
+    who_are_you: {
+        name: "少女", text: "「名字只是現實社會的標籤。在這裡，我就是你，你就是我。我們在 The Wired 中早已相識。」", scene: "wired", character: "default",
+        choices: [ { text: "A 「我聽不懂...」", next: "run_away" }, { text: "B 「帶我去 The Wired 吧。」", next: "deep_wired_entry" } ]
+    },
+    the_letter_truth: {
+        name: "少女", text: "「現實的肉體無法寫信。那是『預言』。Knights 已經鎖定了你的 IP，你無處可逃了。」", scene: "wired", character: "glitch",
+        choices: [ { text: "A 「Knights 是什麼？」", next: "the_knights" } ]
+    },
+    boot_pc: {
+        name: "終端機", text: "連線已建立。螢幕上浮現出一個女孩的臉，她的十字髮夾在黑暗中發出粉紅色的微光。", scene: "wired", character: "default",
+        choices: [ { text: "A 「妳是神嗎？」", next: "god_of_wired" }, { text: "B 輸入指令：強制斷線", next: "deep_wired_entry" } ]
+    },
+    computer_lab: {
+        name: "旁白", text: "數十台舊型終端機同時亮起，每一個螢幕上都顯示著同一句話：『捨棄肉體，進入真理』。", scene: "wired", character: false,
+        choices: [ { text: "A 按下主機 Enter 鍵", next: "deep_wired_entry" }, { text: "B 崩潰地砸碎螢幕", next: "shatter_screen" } ]
+    },
+    the_knights: {
+        name: "少女", text: "「Knights... 他們是一群想在網路中創造『神』的狂熱者。但他們不知道，神，其實就是我們集體的無意識。」", scene: "deepwired", character: "glitch",
+        choices: [ { text: "A 「所以，我們要對抗他們？」", next: "deep_wired_entry" }, { text: "B 「我不想參與這些事！」", next: "run_away" } ]
+    },
+    deep_wired_entry: {
+        name: "少女", text: "周圍的空間開始扭曲，物理法則被抽離。「既然你做出了選擇，那就看著吧。現實與虛擬的界線，早就不存在了。」", scene: "deepwired", character: "default",
+        choices: [ { text: "A 閉上眼睛，感受數據流", next: "god_of_wired" }, { text: "B 試圖拔掉脖子上的虛擬插頭", next: "shatter_screen" } ]
+    },
+    god_of_wired: {
+        name: "少女", text: "「我無處不在。只要有人記得我，我就存在。記憶即是記錄，記錄即是代碼。你要一起成為協議(Protocol)的一部份嗎？」", scene: "deepwired", character: "glitch",
+        choices: [ { text: "A 「我願意成為 The Wired 的一部分。」", next: "true_end" }, { text: "B 「不，我還是想做個人類。」", next: "normal_end_1" } ]
+    },
+    run_away: {
+        name: "旁白", text: "你瘋狂地轉身逃跑。但無論你打開哪一扇門，背後都是無盡的伺服器機房與纏繞的電線。", scene: "deepwired", character: false,
+        choices: [ { text: "A 絕望地癱倒在地", next: "bad_end_1" } ]
+    },
+    shatter_screen: {
+        name: "旁白", text: "你破壞了設備。但流出來的不是零件，而是發著綠光的實體數據流，它們像觸手一樣將你緊緊纏繞...", scene: "deepwired", character: false,
+        choices: [ { text: "A 失去意識", next: "bad_end_2" } ]
+    },
+    system_crash: {
+        name: "系統", text: "FATAL ERROR. 偵測到異常的實體拒絕。正在強制重啟大腦記憶區塊...", scene: "school", character: false,
+        choices: [ { text: "A 醒來", next: "normal_end_2" } ]
+    },
+    true_end: {
+        name: "TRUE END", text: "【PROTOCOL CONNECTED】肉體溶解。你成為了網路世界中永恆的幽靈。你在每個螢幕後，靜靜看著所有人。", scene: "deepwired", character: "default", choices: []
+    },
+    normal_end_1: {
+        name: "NORMAL END", text: "【ACCESS DENIED】你回到了平淡無奇的日常。但偶爾在路過電線桿時，你會聽見刺耳的雜訊在呼喚你的名字。", scene: "school", character: "wired", choices: []
+    },
+    normal_end_2: {
+        name: "NORMAL END", text: "【MEMORY ERASED】你在教室的桌上醒來。不記得有什麼信，也不記得放學後發生的事。一切如常。", scene: "school", character: false, choices: []
+    },
+    bad_end_1: {
+        name: "BAD END", text: "【INFINITE LOOP】你永遠被困在無盡的伺服器迷宮中。現實世界裡，警方判定你為失蹤人口。", scene: "deepwired", character: false, choices: []
+    },
+    bad_end_2: {
+        name: "BAD END", text: "【DATA OVERFLOW】你的大腦無法處理龐大的網路資訊流，人格徹底崩潰，成為了網路中的無意識碎片。", scene: "deepwired", character: false, choices: []
+    }
+};
+
+const textElement = document.getElementById("text");
+const nameElement = document.getElementById("name");
+const choicesElement = document.getElementById("choices");
+const gameElement = document.getElementById("game");
+const characterElement = document.getElementById("character");
+const asciiElement = document.getElementById("ascii-art");
+const restartButton = document.getElementById("restart");
+
+function showScene(id) {
+    const scene = story[id];
+
+    nameElement.textContent = scene.name;
+    textElement.textContent = scene.text;
+
+    if (scene.scene === "night") gameElement.className = "scene-night";
+    else if (scene.scene === "wired") gameElement.className = "scene-wired";
+    else if (scene.scene === "deepwired") gameElement.className = "scene-deepwired";
+    else gameElement.className = "scene-school";
+
+    // 判斷並渲染對應的 ASCII 立繪
+    if (scene.character && asciiSprites[scene.character]) {
+        asciiElement.textContent = asciiSprites[scene.character];
+        characterElement.style.display = "block";
+    } else {
+        characterElement.style.display = "none";
+    }
+
+    choicesElement.innerHTML = "";
+
+    if (scene.choices.length === 0) {
+        restartButton.style.display = "block";
+        playBurstNoise();
+        gameElement.classList.add("ending-crash");
+        setTimeout(() => gameElement.classList.remove("ending-crash"), 500);
+        return;
+    }
+
+    restartButton.style.display = "none";
+    gameElement.classList.remove("ending-crash");
+
+    scene.choices.forEach(choice => {
+        const button = document.createElement("button");
+        button.className = "choice";
+        button.textContent = choice.text;
+
+        button.onclick = () => {
+            if (!isAudioPlaying) initAudio();
+            showScene(choice.next);
+        };
+
+        choicesElement.appendChild(button);
+    });
+}
+
+function startGame() {
+    gameElement.classList.remove("ending-crash");
+    showScene("start");
+}
+
+document.getElementById("audio-status").onclick = () => {
+    if (!isAudioPlaying) initAudio();
+};
+
+startGame();
+</script>
+</body>
+</html>

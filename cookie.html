@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>COOKIE_JAR.SYS // PROTOCOL_NAVI</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #030803;
+      --fg: #00ff41;
+      --dim: #008f11;
+      --mid: #00aa22;
+      --warn: #ffcc00;
+      --hot: #ff0055;
+      --panel: rgba(0, 10, 2, 0.92);
+    }
+    body.amber {
+      --fg: #ffb000;
+      --dim: #9a6b00;
+      --mid: #cc8800;
+      --panel: rgba(18, 10, 0, 0.92);
+    }
+    html, body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: "Courier New", Courier, monospace;
+      min-height: 100vh;
+    }
+    body { padding: 18px; }
+    body.noscroll { overflow: hidden; height: 100vh; }
+
+    /* CRT scanlines — same family as index.html */
+    body.scan::before {
+      content: " ";
+      display: block;
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+                  linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+      z-index: 99999;
+      background-size: 100% 3px, 6px 100%;
+      pointer-events: none;
+    }
+
+    .shell {
+      max-width: 920px;
+      margin: 0 auto;
+      border: 1px solid var(--fg);
+      box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
+      background: var(--panel);
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      border-bottom: 1px dashed var(--fg);
+      padding: 10px 14px;
+      font-size: 12px;
+      color: var(--dim);
+    }
+    .topbar b { color: var(--fg); font-weight: normal; }
+    .screen { padding: 22px 20px 28px; min-height: 520px; }
+    h1 {
+      font-size: 20px;
+      letter-spacing: 2px;
+      text-shadow: 0 0 8px rgba(0, 255, 65, 0.5);
+      margin-bottom: 8px;
+    }
+    h2 { font-size: 15px; margin: 16px 0 8px; color: var(--mid); }
+    p, li { font-size: 13px; line-height: 1.7; color: var(--fg); }
+    .dim { color: var(--dim); }
+    .mid { color: var(--mid); }
+    .warn { color: var(--warn); }
+    .hot { color: var(--hot); }
+    .mono { white-space: pre-wrap; font-size: 12px; line-height: 1.55; }
+
+    a, button, .linkish {
+      font-family: inherit;
+      color: var(--fg);
+      background: transparent;
+      border: 1px solid var(--fg);
+      padding: 6px 12px;
+      cursor: pointer;
+      text-decoration: none;
+      font-size: 13px;
+      display: inline-block;
+    }
+    a:hover, button:hover, .linkish:hover {
+      background: var(--fg);
+      color: var(--bg);
+    }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    input[type="text"] {
+      font-family: inherit;
+      background: #000;
+      color: var(--fg);
+      border: 1px solid var(--dim);
+      padding: 6px 8px;
+      font-size: 13px;
+      width: min(280px, 100%);
+    }
+    .row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      border-bottom: 1px dashed var(--dim);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+    .nav a, .nav button { font-size: 12px; padding: 4px 8px; }
+    .nav .here { background: var(--fg); color: var(--bg); }
+
+    .card {
+      border: 1px dashed var(--dim);
+      padding: 12px;
+      margin: 10px 0;
+    }
+    .post { border-left: 2px solid var(--mid); padding: 8px 10px; margin: 8px 0; }
+    .locked { opacity: 0.55; }
+    .ok { color: var(--fg); }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 10px 0; }
+    th, td { border: 1px solid var(--dim); padding: 6px 8px; text-align: left; vertical-align: top; }
+    th { color: var(--mid); }
+    .cursor {
+      display: inline-block;
+      width: 8px; height: 14px;
+      background: var(--fg);
+      animation: blink 1s infinite;
+      vertical-align: middle;
+      margin-left: 4px;
+    }
+    @keyframes blink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+    .blink { animation: blink 1.2s infinite; }
+    .home90s {
+      background: #000040;
+      color: #ffff00;
+      border: 3px ridge #c0c0c0;
+      padding: 12px;
+      font-family: "Times New Roman", serif;
+    }
+    .home90s h3 { color: #00ffff; font-family: "Comic Sans MS", cursive, serif; }
+    .home90s p { color: #ffffff; }
+    .footer {
+      border-top: 1px dashed var(--fg);
+      padding: 10px 14px;
+      font-size: 11px;
+      color: var(--dim);
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .q { margin: 10px 0; }
+    .q button { margin: 4px 4px 0 0; }
+    #toast {
+      position: fixed; right: 16px; top: 16px; z-index: 50;
+      border: 1px solid var(--fg); background: var(--panel);
+      padding: 10px 14px; font-size: 12px; display: none;
+      max-width: 280px;
+    }
+  </style>
+</head>
+<body class="scan">
+<div id="toast"></div>
+<div class="shell">
+  <div class="topbar">
+    <div>HOST: navi.club:80 &nbsp;|&nbsp; PROTO: HTTP/1.0 &nbsp;|&nbsp; USER: <b id="who">GUEST</b></div>
+    <div>CONSENT:<b id="stConsent">?</b> &nbsp; SESSION:<b id="stSess">NO</b> &nbsp; KEYS:<b id="stKeys">0/4</b> &nbsp; VISITS:<b id="stVis">0</b></div>
+  </div>
+  <div class="screen" id="screen"></div>
+  <div class="footer">
+    <span>COOKIE_JAR.SYS // AP CYBERSECURITY MIDTERM // BEST VIEWED IN A 199X TERMINAL</span>
+    <a href="./index.html" style="border:none;padding:0;color:inherit;">&lt; RETURN_TO_INDEX</a>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   COOKIE_JAR.SYS
+   HTTP cookies are the only save system. localStorage is unused.
+   Open DevTools → Application → Cookies during demo.
+   Cookie helpers: setCookie / getCookie / delCookie
+   ============================================================ */
+
+var COOKIE_PATH = "/";
+var COOKIE_DAYS = 7;
+var KEYS = ["NAVI", "RING", "TRACE", "CRUMB"];
+var ROOMS = ["gate","book","mail","ring","phantom","kitchen","vault","docs"];
+
+function setCookie(name, value, days) {
+  var maxAge = (days == null ? COOKIE_DAYS : days) * 86400;
+  if (days === 0) maxAge = 0;
+  document.cookie = name + "=" + encodeURIComponent(value)
+    + "; path=" + COOKIE_PATH
+    + "; max-age=" + maxAge
+    + "; SameSite=Lax";
+}
+function getCookie(name) {
+  var parts = document.cookie.split(";");
+  for (var i = 0; i < parts.length; i++) {
+    var p = parts[i].trim();
+    if (p.indexOf(name + "=") === 0) {
+      return decodeURIComponent(p.slice(name.length + 1));
+    }
+  }
+  return null;
+}
+function delCookie(name) {
+  document.cookie = name + "=; path=" + COOKIE_PATH + "; max-age=0; SameSite=Lax";
+}
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, function (c) {
+    return ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" })[c];
+  });
+}
+function toast(msg) {
+  var t = document.getElementById("toast");
+  t.textContent = msg;
+  t.style.display = "block";
+  clearTimeout(toast._h);
+  toast._h = setTimeout(function () { t.style.display = "none"; }, 2600);
+}
+
+function loadProgress() {
+  try { return JSON.parse(getCookie("navi_progress") || "{}"); }
+  catch (e) { return {}; }
+}
+function saveProgress(p) {
+  setCookie("navi_progress", JSON.stringify(p), COOKIE_DAYS);
+}
+function invList() {
+  var raw = getCookie("navi_inv") || "";
+  return raw ? raw.split(",").filter(Boolean) : [];
+}
+function addKey(k) {
+  var list = invList();
+  if (list.indexOf(k) === -1) {
+    list.push(k);
+    setCookie("navi_inv", list.join(","), COOKIE_DAYS);
+    toast("INVENTORY += " + k);
+  }
+  paintStatus();
+}
+function loadPrefs() {
+  try { return JSON.parse(getCookie("navi_prefs") || "{}"); }
+  catch (e) { return {}; }
+}
+function applyPrefs() {
+  var p = loadPrefs();
+  document.body.classList.toggle("amber", p.phosphor === "amber");
+  document.body.classList.toggle("scan", p.scan !== "off");
+}
+function sessionHandle() {
+  var s = getCookie("navi_session");
+  if (!s) return null;
+  var m = /^tok\.([A-Za-z0-9_]{2,12})\./.exec(s);
+  return m ? m[1] : null;
+}
+function track(room) {
+  if (getCookie("navi_consent") !== "accept") return;
+  var prev = getCookie("navi_track") || "";
+  var next = (prev ? prev + "|" : "") + room + "@" + Date.now();
+  if (next.length > 800) next = next.slice(next.length - 800);
+  setCookie("navi_track", next, COOKIE_DAYS);
+}
+function bumpVisit(room) {
+  var p = loadProgress();
+  p.visits = (p.visits || 0) + 1;
+  p.last = room;
+  p.rooms = p.rooms || [];
+  if (p.rooms.indexOf(room) === -1) p.rooms.push(room);
+  saveProgress(p);
+  track(room);
+}
+function paintStatus() {
+  var h = sessionHandle();
+  document.getElementById("who").textContent = h || "GUEST";
+  document.getElementById("stConsent").textContent = getCookie("navi_consent") || "NONE";
+  document.getElementById("stSess").textContent = h ? "YES" : "NO";
+  document.getElementById("stKeys").textContent = invList().length + "/4";
+  document.getElementById("stVis").textContent = String(loadProgress().visits || 0);
+}
+
+var S = { view: "boot" };
+
+function go(view, extra) {
+  S.view = view;
+  S.extra = extra || null;
+  render();
+}
+
+function render() {
+  applyPrefs();
+  paintStatus();
+  var el = document.getElementById("screen");
+  var map = {
+    boot: viewBoot,
+    consent: viewConsent,
+    login: viewLogin,
+    gate: viewGate,
+    book: viewBook,
+    mail: viewMail,
+    ring: viewRing,
+    phantom: viewPhantom,
+    kitchen: viewKitchen,
+    vault: viewVault,
+    docs: viewDocs,
+    wipe: viewWipe,
+    ending: viewEnding
+  };
+  el.innerHTML = (map[S.view] || viewGate)();
+  bind();
+}
+
+function navHtml(here) {
+  var items = [
+    ["gate","GATE.HTM"],
+    ["book","GUESTBOOK"],
+    ["mail","MAIL.BOX"],
+    ["ring","WEBRING"],
+    ["phantom","PHANTOM"],
+    ["kitchen","KITCHEN"],
+    ["vault","VAULT"],
+    ["docs","DOCS.TXT"]
+  ];
+  var html = '<div class="nav">';
+  for (var i = 0; i < items.length; i++) {
+    var cls = items[i][0] === here ? " here" : "";
+    html += '<button class="navbtn' + cls + '" data-room="' + items[i][0] + '">' + items[i][1] + "</button>";
+  }
+  html += '<button id="btnLogout">LOGOUT</button>';
+  html += "</div>";
+  return html;
+}
+
+function needSession() {
+  if (sessionHandle()) return true;
+  toast("SESSION COOKIE MISSING — LOGIN FIRST");
+  go("login");
+  return false;
+}
+
+/* ---------- VIEWS ---------- */
+
+function viewBoot() {
+  return '<div class="mono dim" id="bootlog"></div>';
+}
+
+function viewConsent() {
+  return [
+    "<h1>TRACKING_CONSENT.ASK</h1>",
+    '<p class="dim">NAVI_CLUB wants to set HTTP cookies on this browser.</p>',
+    "<p>This is not a fake banner. Your choice is written to cookie <b>navi_consent</b> and is read on every later page.</p>",
+    '<div class="card">',
+    "<p><b>ACCEPT</b> — the site will also write <b>navi_track</b>, a log of every room you open. Personalized pages turn on. Privacy risk: anyone with this cookie (or this HTTP traffic) can replay your path.</p>",
+    "<p><b>DECLINE</b> — <b>navi_track</b> is never set. Ads/personalization stay dark. Functional cookies (session, progress, inventory, prefs) still run, because the game has to remember you.</p>",
+    "</div>",
+    '<p class="warn">HTTP cookies are sent with every request to this host. This lab is HTTP, not HTTPS, so a packet sniffer on the same network could read them. That is the point of the lesson.</p>',
+    '<div class="row">',
+    '<button id="cAccept">ACCEPT TRACKING</button>',
+    '<button id="cDecline">DECLINE TRACKING</button>',
+    "</div>"
+  ].join("");
+}
+
+function viewLogin() {
+  var resume = loadProgress().last ? '<p class="mid">PROGRESS COOKIE FOUND. After login you will resume at ' + esc(loadProgress().last).toUpperCase() + ".HTM</p>" : "";
+  return [
+    "<h1>AUTH_LITE.SYS</h1>",
+    '<p class="dim">Educational session cookie only. Do not use a real password. Do not use anyone else\'s name.</p>',
+    resume,
+    "<p>HANDLE (2–12 letters/digits/_)</p>",
+    '<p><input id="handle" type="text" maxlength="12" placeholder="e.g. lain"></p>',
+    "<p>DEMO PASSPHRASE (printed on purpose)</p>",
+    '<p><input id="pass" type="text" maxlength="20" placeholder="wired"></p>',
+    '<p class="dim">The passphrase is the word <b>wired</b>. It is a demo token, not an account.</p>',
+    '<div class="row"><button id="doLogin">SET navi_session</button></div>',
+    '<p class="dim">On success the browser stores <b>navi_session=tok.&lt;handle&gt;.&lt;nonce&gt;</b> for 7 days. Logout deletes only that cookie. Progress and keys stay.</p>'
+  ].join("");
+}
+
+function viewGate() {
+  var h = sessionHandle() || "GUEST";
+  var p = loadProgress();
+  var keys = invList();
+  return navHtml("gate") + [
+    "<h1>NAVI_CLUB // GATE.HTM</h1>",
+    '<p class="dim">1996-04-12 &nbsp; sysop last seen 47 days ago. the jar still remembers.</p>',
+    "<p>Welcome, <b>" + esc(h) + "</b>. This homepage is held together by HTTP cookies. Refresh the tab: you should still be you.</p>",
+    '<div class="card">',
+    "<p>LAST ROOM: <b>" + esc(p.last || "none") + "</b></p>",
+    "<p>ROOMS TOUCHED: <b>" + esc((p.rooms || []).join(", ") || "none") + "</b></p>",
+    "<p>KEYS IN navi_inv: <b>" + esc(keys.join(", ") || "empty") + "</b></p>",
+    "</div>",
+    "<h2>MISSION</h2>",
+    "<p>Four crumbs were left in the jar. Collect them, then open VAULT. A first run is about ten minutes. Read the rooms. Cookies change what you see.</p>",
+    "<ul>",
+    "<li>GUESTBOOK — session identity / 4-glyph handle</li>",
+    "<li>MAIL.BOX — hints (session required)</li>",
+    "<li>WEBRING — visit three 90s pages in the right order</li>",
+    "<li>PHANTOM — see what tracking actually recorded</li>",
+    "<li>KITCHEN — preferences + cookie quiz</li>",
+    "<li>DOCS.TXT — teacher write-up of every cookie</li>",
+    "</ul>",
+    '<p class="dim">Tip: Chrome → DevTools → Application → Cookies → this host. Watch names change as you click.</p>'
+  ].join("");
+}
+
+function viewBook() {
+  var h = sessionHandle();
+  var four = h && h.length === 4;
+  var posts = [
+    ["xX_cool98", "first!!! guestbook rulez. don't trust banners."],
+    ["sysop", "if you can read this i am already gone. the vault wants four crumbs."],
+    ["marie", "he said the webring is a ritual. shrine, then school, then the wire."],
+    ["anon", "they log every click if you said yes. look at PHANTOM."],
+    ["sysop", four
+      ? ("HANDLE length checks out (" + esc(h) + " = 4). crumb released: NAVI")
+      : "I only reply to 4-glyph handles. LOGOUT, then SET a new navi_session with a 4-character handle. Progress cookies survive logout. Session does not."]
+  ];
+  var html = navHtml("book") + "<h1>GUESTBOOK.CGI</h1>";
+  html += '<p class="dim">Reads <b>navi_session</b> to greet you. The last sticky post is generated from handle length — that is cookie-driven behavior, not decoration.</p>';
+  html += "<p>Signed in as <b>" + esc(h) + "</b> (" + h.length + " glyphs)</p>";
+  for (var i = 0; i < posts.length; i++) {
+    html += '<div class="post"><b>' + esc(posts[i][0]) + "</b><br>" + posts[i][1] + "</div>";
+  }
+  if (four) html += '<p class="ok">KEY AVAILABLE. Click to write it into <b>navi_inv</b>.</p><div class="row"><button id="takeNavi">TAKE CRUMB NAVI</button></div>';
+  else html += '<div class="row"><button id="btnLogout">LOGOUT AND RE-AUTH</button></div>';
+  return html;
+}
+
+function viewMail() {
+  var open = S.extra || "list";
+  var html = navHtml("mail") + "<h1>MAIL.BOX</h1>";
+  html += '<p class="dim">Unlocked only while <b>navi_session</b> exists. Closing the session hides the letters again.</p>';
+  if (open === "list") {
+    html += '<div class="card"><button class="mail" data-id="1">01 SYSOP — last broadcast</button></div>';
+    html += '<div class="card"><button class="mail" data-id="2">02 MARIE — ritual</button></div>';
+    html += '<div class="card"><button class="mail" data-id="3">03 UNKNOWN — about crumbs</button></div>';
+  } else if (open === "1") {
+    html += '<div class="card mono">FROM: sysop@navi.club\nTO: whoever still has a session cookie\n\nI did not disappear. I unplugged.\nThey were going to keep navi_track forever.\n\nIf you accepted tracking, PHANTOM already has your path.\nIf you declined, PHANTOM is empty — that is also evidence.\n\nKitchen still asks three questions. Wrong answers do not set the crumb.</div>';
+    html += '<div class="row"><button class="mail" data-id="list">BACK</button></div>';
+  } else if (open === "2") {
+    html += '<div class="card mono">FROM: marie\n\nThe webring is not random.\nSHRINE first. SCHOOL second. WIRED last.\nIf you wander out of order the sequence cookie resets.\nThat is how a progress flag is supposed to work.</div>';
+    html += '<div class="row"><button class="mail" data-id="list">BACK</button></div>';
+  } else {
+    html += '<div class="card mono">FROM: unknown\n\nFour crumbs:\n  NAVI   — identity (guestbook)\n  RING   — order (webring)\n  TRACE  — surveillance (phantom)\n  CRUMB  — literacy (kitchen)\n\nVault passphrase is NAVI-RING-TRACE-CRUMB\nwith hyphens. The inventory cookie must already hold all four or the vault refuses, even if you type the string.</div>';
+    html += '<div class="row"><button class="mail" data-id="list">BACK</button></div>';
+  }
+  return html;
+}
+
+function viewRing() {
+  var p = loadProgress();
+  var seq = p.ring || [];
+  var page = S.extra || "hub";
+  var html = navHtml("ring") + "<h1>WEBRING // 1996</h1>";
+  html += '<p class="dim">Sequence stored in <b>navi_progress.ring</b>. Correct order: SHRINE → SCHOOL → WIRED. A wrong click wipes the sequence.</p>';
+  html += "<p>CURRENT SEQUENCE: <b>" + esc(seq.join(" → ") || "(empty)") + "</b></p>";
+  if (page === "hub") {
+    html += '<div class="row">';
+    html += '<button class="site" data-site="shrine">SHRINE.HTM</button>';
+    html += '<button class="site" data-site="school">SCHOOL.HTM</button>';
+    html += '<button class="site" data-site="wired">WIRED.HTM</button>';
+    html += "</div>";
+    if (seq.join(",") === "shrine,school,wired") {
+      html += '<p class="ok">RITUAL COMPLETE.</p><div class="row"><button id="takeRing">TAKE CRUMB RING</button></div>';
+    }
+  } else if (page === "shrine") {
+    html += '<div class="home90s"><h3>~*~ lain\'s shrine ~*~</h3><p>UNDER CONSTRUCTION</p><p>please sign my guestbook. this page is best viewed at 800x600.</p><p>visitor counter (fake): 0001492</p><p style="color:#ff00ff">the real counter is navi_progress.visits — cookies, not GIF digits.</p></div>';
+    html += '<div class="row"><button class="site" data-site="hub">BACK TO RING</button></div>';
+  } else if (page === "school") {
+    html += '<div class="home90s"><h3>Cyberia High // class BBS</h3><p>Homework: what does a browser send on every request to this host?</p><p>Answer: Cookie: header, if any cookies exist for this path.</p><p>That is why a tracking cookie is not "just sitting there". It rides along.</p></div>';
+    html += '<div class="row"><button class="site" data-site="hub">BACK TO RING</button></div>';
+  } else {
+    html += '<div class="home90s"><h3>WIRED_NODE</h3><p>Present day, present time.</p><p>If you arrived shrine → school → wired, the jar will give you RING.</p><p>If not, start over. Order is the whole trick.</p></div>';
+    html += '<div class="row"><button class="site" data-site="hub">BACK TO RING</button></div>';
+  }
+  return html;
+}
+
+function viewPhantom() {
+  var consent = getCookie("navi_consent");
+  var raw = getCookie("navi_track");
+  var html = navHtml("phantom") + "<h1>PHANTOM.LOG</h1>";
+  html += '<p>Live <b>document.cookie</b> dump (this is what JavaScript can see — no HttpOnly on these demo cookies):</p>';
+  html += '<div class="card mono">' + esc(document.cookie || "(empty)") + "</div>";
+  if (consent === "accept" && raw) {
+    html += "<h2>navi_track DECODED</h2><p class=\"warn\">You accepted tracking. This cookie is a visit log. This is the privacy risk.</p><div class=\"card mono\">";
+    raw.split("|").forEach(function (pair) {
+      var bits = pair.split("@");
+      if (!bits[0]) return;
+      var when = bits[1] ? new Date(Number(bits[1])).toLocaleString() : "?";
+      html += esc(bits[0]) + "  @  " + esc(when) + "\n";
+    });
+    html += "</div>";
+    html += '<div class="q"><p>Q1. Which cookie recorded your path?</p>';
+    html += '<input id="ans1" type="text" placeholder="cookie name"> <button id="chkPhantom">SUBMIT</button></div>';
+  } else {
+    html += '<div class="card">navi_track is absent. You declined (or wiped) tracking. The phantom has nothing to replay. That is a real branch, not a painted banner.</div>';
+    html += '<div class="q"><p>Q1. Which cookie attribute would stop this page\'s JavaScript from reading a cookie at all?</p>';
+    html += '<input id="ans1" type="text" placeholder="attribute name"> <button id="chkPhantom">SUBMIT</button></div>';
+  }
+  html += '<div class="q"><p>Q2. This lab is served over HTTP, so the Secure flag was not set. Name one attack that becomes easier because of that.</p>';
+  html += '<input id="ans2" type="text" placeholder="one word"> <button id="chkPhantom2">SUBMIT</button></div>';
+  html += '<p class="dim" id="phMsg"></p>';
+  if (loadProgress().phantom) {
+    html += '<p class="ok">TRACE already in jar.</p><div class="row"><button id="takeTrace">TAKE CRUMB TRACE</button></div>';
+  }
+  return html;
+}
+
+function viewKitchen() {
+  var prefs = loadPrefs();
+  var k = loadProgress().kitchen || [false, false, false];
+  var html = navHtml("kitchen") + "<h1>COOKIE_KITCHEN</h1>";
+  html += "<p>Preference toggles write <b>navi_prefs</b> and are applied immediately by reading that cookie.</p>";
+  html += '<div class="row">';
+  html += '<button id="phos">' + (prefs.phosphor === "amber" ? "PHOSPHOR: AMBER" : "PHOSPHOR: GREEN") + "</button>";
+  html += '<button id="scan">' + (prefs.scan === "off" ? "SCANLINES: OFF" : "SCANLINES: ON") + "</button>";
+  html += "</div>";
+  html += "<h2>LITERACY QUIZ (all three required)</h2>";
+  html += qBlock(0, k[0], "A cookie with no Max-Age and no Expires is a ____ cookie.",
+    [["session","session"],["persistent","no"],["third-party","no"]]);
+  html += qBlock(1, k[1], "Why is putting a real password in a cookie a bad idea?",
+    [["it can be stolen via XSS or traffic sniffing","ok"],["cookies are encrypted by default","no"],["browsers refuse to send cookies","no"]]);
+  html += qBlock(2, k[2], "SameSite=Lax is mainly meant to reduce which attack?",
+    [["CSRF","ok"],["SQL injection","no"],["DDoS","no"]]);
+  if (k[0] && k[1] && k[2]) {
+    html += '<p class="ok">QUIZ CLEAR.</p><div class="row"><button id="takeCrumb">TAKE CRUMB CRUMB</button></div>';
+  }
+  return html;
+}
+function qBlock(i, done, question, opts) {
+  var html = '<div class="q card' + (done ? "" : "") + '"><p>' + (done ? "✓ " : "") + question + "</p>";
+  if (done) html += '<p class="mid">saved in navi_progress.kitchen[' + i + "] = true</p>";
+  else {
+    for (var n = 0; n < opts.length; n++) {
+      html += '<button class="quiz" data-q="' + i + '" data-ok="' + (opts[n][1] === "ok" || opts[n][1] === "session" ? "1" : "0") + '">' + opts[n][0] + "</button> ";
+    }
+  }
+  html += "</div>";
+  return html;
+}
+
+function viewVault() {
+  var have = invList();
+  var html = navHtml("vault") + "<h1>VAULT.ENC</h1>";
+  html += "<p>Inventory cookie must contain NAVI, RING, TRACE, CRUMB. Typing the passphrase without the cookies does not count — the vault reads <b>navi_inv</b>.</p>";
+  html += '<p>HAVE: <b>' + esc(have.join(", ") || "nothing") + "</b></p>";
+  html += '<p><input id="passphrase" type="text" placeholder="NAVI-RING-TRACE-CRUMB"></p>';
+  html += '<div class="row"><button id="openVault">DECRYPT</button></div>';
+  html += '<p class="dim" id="vaultMsg"></p>';
+  return html;
+}
+
+function viewDocs() {
+  return navHtml("docs") + [
+    "<h1>DOCS.TXT // COOKIE EXPLANATION</h1>",
+    '<p class="dim">AP Cybersecurity midterm write-up. Demo: DevTools → Application → Cookies.</p>',
+    "<table><tr><th>Name</th><th>Purpose</th><th>Set</th><th>Read</th><th>Cleared</th></tr>",
+    row("navi_consent","Accept or decline tracking. Branches PHANTOM and the ending.","Consent screen","Every load / PHANTOM / ending","WIPE"),
+    row("navi_session","Auth-lite token tok.&lt;handle&gt;.&lt;nonce&gt;. Unlocks guestbook + mail. 4-glyph handle unlocks NAVI.","Login","Gate, guestbook, mail, status bar","LOGOUT or WIPE"),
+    row("navi_progress","JSON: last room, rooms[], ring sequence, kitchen flags, phantom flag, visits. Resume-later.","Each room / quiz / webring","Resume, webring, kitchen, gate","WIPE"),
+    row("navi_inv","Comma list of crumbs. Vault will not open unless all four are present.","When a crumb is taken","Vault, status, gate","WIPE"),
+    row("navi_prefs","JSON {phosphor, scan}. Theme actually changes because the cookie is re-read.","Kitchen toggles","applyPrefs() on every render","WIPE"),
+    row("navi_track","Visit log room@timestamp. ONLY if consent=accept. Never written on decline.","track() on room enter","PHANTOM decode","WIPE, or never created"),
+    "</table>",
+    "<h2>WHAT HAPPENS IF COOKIES ARE CLEARED</h2>",
+    "<p>You become GUEST. Consent is asked again. Session is gone so mail/guestbook lock. Keys and progress vanish. Prefs snap back to green + scanlines. That is the whole save file.</p>",
+    "<h2>WHAT DOES NOT COUNT (AND WAS NOT USED)</h2>",
+    "<p>No localStorage. No decorative banner. Every cookie above is read to change gameplay or UI.</p>",
+    "<h2>PRIVACY / SECURITY NOTES</h2>",
+    "<ul>",
+    "<li>These cookies are readable by JavaScript (no HttpOnly) so the phantom dump can teach that XSS would steal them.</li>",
+    "<li>No Secure flag: the site is HTTP. Traffic can be sniffed. Production auth cookies should be Secure + HttpOnly + SameSite.</li>",
+    "<li>SameSite=Lax is set. It is not a complete CSRF defense, but it is the right default to talk about.</li>",
+    "<li>The session value is a demo token, not a password hash. Do not store real secrets in cookies.</li>",
+    "<li>Accepting tracking writes a path you can later replay. That is first-party tracking in miniature.</li>",
+    "</ul>",
+    "<h2>HOW TO RUN</h2>",
+    "<p>Open this page from the live host (not file://). Cookies need an HTTP origin. Typical playthrough ≈ 10 minutes. Use WIPE to restart.</p>",
+    '<div class="row"><button data-room="wipe" class="navbtn">WIPE ALL COOKIES</button></div>'
+  ].join("");
+}
+function row(a,b,c,d,e) {
+  return "<tr><td><b>" + a + "</b></td><td>" + b + "</td><td>" + c + "</td><td>" + d + "</td><td>" + e + "</td></tr>";
+}
+
+function viewWipe() {
+  return [
+    "<h1>WIPE.SH</h1>",
+    "<p>This deletes navi_consent, navi_session, navi_progress, navi_inv, navi_prefs, navi_track.</p>",
+    '<div class="row"><button id="doWipe">CONFIRM WIPE</button><button data-room="docs" class="navbtn">CANCEL</button></div>'
+  ].join("");
+}
+
+function viewEnding() {
+  var accept = getCookie("navi_consent") === "accept";
+  var html = navHtml("vault") + "<h1>VAULT OPEN</h1>";
+  if (accept) {
+    html += '<div class="card"><p>You said yes to tracking. navi_track still holds a map of this session. That is convenient — resume, personalization, "we remember you" — and it is also a record that can be copied, subpoenaed, or stolen with XSS because these cookies are not HttpOnly.</p><p>Sysop left because remembering became indistinguishable from watching.</p></div>';
+  } else {
+    html += '<div class="card"><p>You declined tracking. navi_track was never born. The phantom was empty. You still had a session cookie, a progress cookie, an inventory cookie. "No tracking" is not "no cookies". Functional state is still client-side and still stealable if we skip HttpOnly/Secure.</p><p>Sysop wanted people to know the difference.</p></div>';
+  }
+  html += "<p>Present day, present time. The jar is just a header named Cookie.</p>";
+  html += '<div class="row"><button data-room="docs" class="navbtn">READ DOCS.TXT</button><button data-room="wipe" class="navbtn">WIPE AND REPLAY</button></div>';
+  return html;
+}
+
+/* ---------- BIND ---------- */
+
+function bind() {
+  if (S.view === "boot") runBoot();
+
+  var cA = document.getElementById("cAccept");
+  var cD = document.getElementById("cDecline");
+  if (cA) cA.onclick = function () { setCookie("navi_consent", "accept", COOKIE_DAYS); toast("navi_consent=accept"); go("login"); };
+  if (cD) cD.onclick = function () { setCookie("navi_consent", "decline", COOKIE_DAYS); delCookie("navi_track"); toast("navi_consent=decline"); go("login"); };
+
+  var dl = document.getElementById("doLogin");
+  if (dl) dl.onclick = doLogin;
+
+  document.querySelectorAll(".navbtn").forEach(function (b) {
+    b.onclick = function () {
+      var room = b.getAttribute("data-room");
+      if (room === "wipe") { go("wipe"); return; }
+      enterRoom(room);
+    };
+  });
+  var lo = document.getElementById("btnLogout");
+  if (lo) lo.onclick = function () {
+    delCookie("navi_session");
+    toast("navi_session deleted");
+    go("login");
+  };
+
+  var takeN = document.getElementById("takeNavi");
+  if (takeN) takeN.onclick = function () { addKey("NAVI"); render(); };
+
+  document.querySelectorAll(".mail").forEach(function (b) {
+    b.onclick = function () { go("mail", b.getAttribute("data-id")); };
+  });
+
+  document.querySelectorAll(".site").forEach(function (b) {
+    b.onclick = function () { ringClick(b.getAttribute("data-site")); };
+  });
+  var takeR = document.getElementById("takeRing");
+  if (takeR) takeR.onclick = function () { addKey("RING"); render(); };
+
+  var cp = document.getElementById("chkPhantom");
+  if (cp) cp.onclick = checkPhantom;
+  var cp2 = document.getElementById("chkPhantom2");
+  if (cp2) cp2.onclick = checkPhantom2;
+  var takeT = document.getElementById("takeTrace");
+  if (takeT) takeT.onclick = function () { addKey("TRACE"); render(); };
+
+  var phos = document.getElementById("phos");
+  if (phos) phos.onclick = function () {
+    var p = loadPrefs();
+    p.phosphor = p.phosphor === "amber" ? "green" : "amber";
+    setCookie("navi_prefs", JSON.stringify(p), COOKIE_DAYS);
+    render();
+  };
+  var sc = document.getElementById("scan");
+  if (sc) sc.onclick = function () {
+    var p = loadPrefs();
+    p.scan = p.scan === "off" ? "on" : "off";
+    setCookie("navi_prefs", JSON.stringify(p), COOKIE_DAYS);
+    render();
+  };
+  document.querySelectorAll(".quiz").forEach(function (b) {
+    b.onclick = function () { kitchenAnswer(+b.getAttribute("data-q"), b.getAttribute("data-ok") === "1"); };
+  });
+  var takeC = document.getElementById("takeCrumb");
+  if (takeC) takeC.onclick = function () { addKey("CRUMB"); render(); };
+
+  var ov = document.getElementById("openVault");
+  if (ov) ov.onclick = openVault;
+
+  var dw = document.getElementById("doWipe");
+  if (dw) dw.onclick = wipeAll;
+}
+
+function enterRoom(room) {
+  if (room === "book" || room === "mail") {
+    if (!needSession()) return;
+  }
+  bumpVisit(room);
+  go(room);
+}
+
+function doLogin() {
+  var handle = (document.getElementById("handle").value || "").trim();
+  var pass = (document.getElementById("pass").value || "").trim();
+  if (!/^[A-Za-z0-9_]{2,12}$/.test(handle)) {
+    toast("HANDLE rejected");
+    return;
+  }
+  if (pass.toLowerCase() !== "wired") {
+    toast("DEMO PASSPHRASE is wired");
+    return;
+  }
+  var nonce = Math.random().toString(36).slice(2, 10);
+  setCookie("navi_session", "tok." + handle + "." + nonce, COOKIE_DAYS);
+  toast("navi_session set for " + handle);
+  var last = loadProgress().last;
+  if (last && ROOMS.indexOf(last) !== -1) enterRoom(last);
+  else enterRoom("gate");
+}
+
+function ringClick(site) {
+  if (site === "hub") { go("ring", "hub"); return; }
+  var order = ["shrine", "school", "wired"];
+  var p = loadProgress();
+  p.ring = p.ring || [];
+  var expect = order[p.ring.length];
+  if (site === expect) {
+    p.ring.push(site);
+    toast("sequence += " + site);
+  } else {
+    p.ring = site === "shrine" ? ["shrine"] : [];
+    if (site === "shrine") toast("sequence restarted at shrine");
+    else toast("wrong order — sequence wiped");
+  }
+  saveProgress(p);
+  bumpVisit("ring");
+  go("ring", site);
+}
+
+function checkPhantom() {
+  var ans = (document.getElementById("ans1").value || "").trim().toLowerCase();
+  var consent = getCookie("navi_consent");
+  var ok = false;
+  if (consent === "accept") {
+    ok = ans === "navi_track" || ans === "navi_track cookie";
+  } else {
+    ok = ans.replace(/[\s_-]/g, "") === "httponly";
+  }
+  var msg = document.getElementById("phMsg");
+  if (!ok) { msg.textContent = "NO. Read the dump / the question again."; return; }
+  var p = loadProgress();
+  p.ph1 = true;
+  if (p.ph1 && p.ph2) p.phantom = true;
+  saveProgress(p);
+  if (p.ph1 && p.ph2) {
+    addKey("TRACE");
+    render();
+  } else {
+    msg.textContent = "Q1 accepted. Answer Q2.";
+  }
+}
+function checkPhantom2() {
+  var ans = (document.getElementById("ans2").value || "").trim().toLowerCase();
+  var ok = /sniff|mitm|intercept|steal|theft|eaves|listen|wireshark|plaintext|plain text|session hijack|hijack/.test(ans);
+  var msg = document.getElementById("phMsg");
+  if (!ok) { msg.textContent = "NO. Think about HTTP vs HTTPS / the Secure flag."; return; }
+  var p = loadProgress();
+  p.ph2 = true;
+  saveProgress(p);
+  if (p.ph1 && p.ph2) {
+    p.phantom = true;
+    saveProgress(p);
+    addKey("TRACE");
+    render();
+  } else {
+    msg.textContent = "Q2 accepted. Answer Q1.";
+  }
+}
+
+function kitchenAnswer(i, ok) {
+  if (!ok) { toast("wrong"); return; }
+  var p = loadProgress();
+  p.kitchen = p.kitchen || [false, false, false];
+  p.kitchen[i] = true;
+  saveProgress(p);
+  toast("navi_progress.kitchen[" + i + "]=true");
+  render();
+}
+
+function openVault() {
+  var have = invList();
+  var msg = document.getElementById("vaultMsg");
+  for (var i = 0; i < KEYS.length; i++) {
+    if (have.indexOf(KEYS[i]) === -1) {
+      msg.textContent = "navi_inv missing " + KEYS[i] + ". Collect it first — typing is not enough.";
+      return;
+    }
+  }
+  var typed = (document.getElementById("passphrase").value || "").trim().toUpperCase();
+  if (typed !== "NAVI-RING-TRACE-CRUMB") {
+    msg.textContent = "Passphrase mismatch. Check MAIL.BOX.";
+    return;
+  }
+  var p = loadProgress();
+  p.vault = true;
+  saveProgress(p);
+  bumpVisit("vault");
+  go("ending");
+}
+
+function wipeAll() {
+  ["navi_consent","navi_session","navi_progress","navi_inv","navi_prefs","navi_track"].forEach(delCookie);
+  toast("all navi_* cookies deleted");
+  go("consent");
+}
+
+function runBoot() {
+  var lines = [
+    "> POST navi.club HTTP/1.0",
+    "> Cookie: (reading jar...)",
+    "> SET_MODULE COOKIE_JAR.SYS",
+    "> CRT_PHOSPHOR OK",
+    "> present day, present time."
+  ];
+  var box = document.getElementById("bootlog");
+  var i = 0;
+  function step() {
+    if (!box) return;
+    if (i < lines.length) {
+      box.textContent += lines[i++] + "\n";
+      setTimeout(step, 280);
+    } else {
+      setTimeout(bootNext, 400);
+    }
+  }
+  step();
+}
+
+function bootNext() {
+  applyPrefs();
+  paintStatus();
+  if (!getCookie("navi_consent")) { go("consent"); return; }
+  if (!sessionHandle()) { go("login"); return; }
+  var last = loadProgress().last;
+  enterRoom(last && ROOMS.indexOf(last) !== -1 ? last : "gate");
+}
+
+paintStatus();
+applyPrefs();
+render();
+</script>
+</body>
+</html>

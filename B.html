@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SECTION_B.LOG // SUBCONSCIOUS_BUFFER_1994</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    :root {
+        --pool-deep: #000c1d;
+        --pool-blue: #004488;
+        --pool-cyan: #00d2ff;
+        --sprite-green: #00ff66;
+        --sprite-yellow: #ccff00;
+        --win-gray: #c0c0c0;
+        --win-dark: #808080;
+        --glitch-red: #ff0055;
+    }
+
+    body {
+        background-color: var(--pool-deep);
+        color: var(--pool-cyan);
+        font-family: "Courier New", Courier, "MS Sans Serif", monospace;
+        min-height: 100vh;
+        padding: 20px 10px;
+        display: flex;
+        justify-content: center;
+        background-image: 
+            radial-gradient(circle at 50% 30%, #002b55 0%, var(--pool-deep) 85%),
+            linear-gradient(0deg, rgba(0, 255, 102, 0.04) 1px, transparent 1px);
+        background-size: 100% 100%, 100% 4px;
+        overflow-x: hidden;
+    }
+
+    /* Netscape Window Frame */
+    .netscape-window {
+        width: min(920px, 98vw);
+        background: var(--win-gray);
+        border: 3px solid;
+        border-color: #ffffff var(--win-dark) var(--win-dark) #ffffff;
+        box-shadow: 0 0 35px rgba(0, 210, 255, 0.25), 8px 8px 0px #000;
+        color: #000;
+        position: relative;
+    }
+
+    .title-bar {
+        background: linear-gradient(90deg, #000080, #008080);
+        padding: 4px 8px;
+        color: #fff;
+        font-weight: bold;
+        font-size: 13px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .win-buttons button {
+        width: 16px; height: 14px;
+        background: var(--win-gray);
+        border: 1px solid;
+        border-color: #ffffff #000 #000 #ffffff;
+        font-size: 9px;
+        line-height: 10px;
+        cursor: pointer;
+    }
+
+    .menu-bar {
+        background: var(--win-gray);
+        padding: 3px 8px;
+        font-size: 12px;
+        border-bottom: 2px solid var(--win-dark);
+        display: flex;
+        gap: 15px;
+    }
+
+    .url-bar {
+        padding: 5px 8px;
+        background: var(--win-gray);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        border-bottom: 2px solid #fff;
+    }
+
+    .url-input {
+        flex: 1;
+        background: #fff;
+        border: 2px solid;
+        border-color: var(--win-dark) #ffffff #ffffff var(--win-dark);
+        padding: 2px 6px;
+        font-family: monospace;
+        color: #000;
+    }
+
+    /* Web Content Layout */
+    .web-body {
+        background: #001224;
+        color: #70e0ff;
+        padding: 20px;
+        border: 2px solid;
+        border-color: var(--win-dark) #ffffff #ffffff var(--win-dark);
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Water Bubbles Animation */
+    .bubble {
+        position: absolute;
+        background: rgba(0, 255, 102, 0.18);
+        border: 1px solid var(--sprite-green);
+        border-radius: 50%;
+        bottom: -20px;
+        animation: floatUp 9s infinite linear;
+        pointer-events: none;
+    }
+
+    @keyframes floatUp {
+        0% { transform: translateY(0) scale(0.8); opacity: 0; }
+        50% { opacity: 0.7; }
+        100% { transform: translateY(-800px) scale(1.3); opacity: 0; }
+    }
+
+    marquee {
+        background: #001f3f;
+        color: var(--sprite-green);
+        border: 1px dashed var(--sprite-green);
+        padding: 4px;
+        font-size: 12px;
+        margin-bottom: 20px;
+    }
+
+    header.blog-header {
+        text-align: center;
+        border-bottom: 2px double var(--pool-cyan);
+        padding-bottom: 15px;
+        margin-bottom: 25px;
+    }
+
+    h1.site-title {
+        font-size: 26px;
+        color: var(--sprite-yellow);
+        text-shadow: 2px 2px #000, 0 0 10px var(--sprite-green);
+        letter-spacing: 2px;
+    }
+
+    .subtitle {
+        color: var(--pool-cyan);
+        font-size: 12px;
+        margin-top: 5px;
+    }
+
+    .main-grid {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        gap: 20px;
+    }
+
+    @media (max-width: 700px) {
+        .main-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Sidebar */
+    .sidebar {
+        background: rgba(0, 25, 50, 0.7);
+        border: 1px solid var(--pool-cyan);
+        padding: 12px;
+        font-size: 12px;
+    }
+
+    .widget-box {
+        border: 1px solid var(--sprite-green);
+        padding: 8px;
+        margin-bottom: 15px;
+        background: #000814;
+    }
+
+    .widget-title {
+        color: var(--sprite-yellow);
+        font-weight: bold;
+        border-bottom: 1px solid var(--sprite-green);
+        padding-bottom: 3px;
+        margin-bottom: 8px;
+    }
+
+    .counter {
+        background: #000;
+        color: var(--glitch-red);
+        font-family: 'Courier New', monospace;
+        font-size: 18px;
+        letter-spacing: 3px;
+        padding: 2px 6px;
+        display: inline-block;
+        border: 1px solid var(--win-dark);
+        animation: counterGlitch 4s infinite;
+    }
+
+    @keyframes counterGlitch {
+        0%, 95% { content: "0041994"; }
+        96% { color: var(--sprite-green); }
+        98% { color: var(--sprite-yellow); }
+    }
+
+    ul.nav-links { list-style: none; }
+    ul.nav-links li { margin-bottom: 6px; }
+
+    ul.nav-links a {
+        color: var(--sprite-green);
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    ul.nav-links a:hover {
+        background: var(--sprite-green);
+        color: #000;
+    }
+
+    /* ARG Main Log Entries */
+    .log-post {
+        background: rgba(0, 16, 35, 0.85);
+        border: 1px solid var(--pool-cyan);
+        padding: 15px;
+        margin-bottom: 20px;
+        box-shadow: 4px 4px 0px rgba(0,0,0,0.6);
+        position: relative;
+    }
+
+    .post-header {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px dashed var(--pool-cyan);
+        padding-bottom: 5px;
+        margin-bottom: 10px;
+        color: var(--sprite-yellow);
+        font-size: 13px;
+    }
+
+    .post-body {
+        font-size: 13.5px;
+        line-height: 1.6;
+        color: #d0f5ff;
+    }
+
+    /* Interactive ARG Elements */
+    .hidden-trigger {
+        color: var(--pool-cyan);
+        border-bottom: 1px dotted var(--pool-cyan);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .hidden-trigger:hover {
+        color: var(--sprite-yellow);
+        background: #003366;
+    }
+
+    .corrupted-text {
+        background: #000;
+        color: var(--glitch-red);
+        padding: 0 4px;
+        font-family: monospace;
+        cursor: help;
+        user-select: all;
+    }
+
+    .ascii-box {
+        font-family: monospace;
+        white-space: pre;
+        font-size: 9.5px;
+        line-height: 1;
+        color: var(--sprite-green);
+        margin: 12px 0;
+        overflow-x: auto;
+        background: #000810;
+        padding: 8px;
+        border: 1px solid rgba(0, 255, 102, 0.3);
+    }
+
+    /* Embedded ARG Terminal Widget */
+    .terminal-widget {
+        background: #000;
+        border: 1px solid var(--sprite-green);
+        padding: 8px;
+        font-family: monospace;
+        font-size: 11px;
+        color: var(--sprite-green);
+    }
+
+    .terminal-output {
+        height: 80px;
+        overflow-y: auto;
+        margin-bottom: 6px;
+        line-height: 1.4;
+        white-space: pre-wrap;
+    }
+
+    .terminal-input-line {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .terminal-input {
+        background: transparent;
+        border: none;
+        color: var(--sprite-yellow);
+        font-family: monospace;
+        font-size: 11px;
+        outline: none;
+        flex: 1;
+    }
+
+    /* Audio Player */
+    .player-box {
+        background: var(--win-gray);
+        color: #000;
+        padding: 8px;
+        border: 2px solid;
+        border-color: #ffffff var(--win-dark) var(--win-dark) #ffffff;
+        font-size: 11px;
+    }
+
+    .player-display {
+        background: #001a00;
+        color: var(--sprite-green);
+        padding: 4px;
+        font-family: monospace;
+        margin-bottom: 6px;
+    }
+
+    /* Glitch Transition Effect for Page Jumps */
+    .glitch-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: #000;
+        z-index: 99999;
+        color: var(--sprite-green);
+        font-family: monospace;
+        padding: 40px;
+        font-size: 18px;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+    }
+
+    footer {
+        text-align: center;
+        margin-top: 20px;
+        padding-top: 10px;
+        border-top: 1px solid var(--pool-cyan);
+        font-size: 11px;
+        color: var(--win-dark);
+    }
+
+    .badge {
+        display: inline-block;
+        border: 1px solid var(--sprite-green);
+        color: var(--sprite-green);
+        padding: 1px 4px;
+        font-size: 9px;
+        margin: 2px;
+    }
+</style>
+</head>
+<body>
+
+<!-- Secret ARG Glitch Screen Overlay -->
+<div id="glitch-screen" class="glitch-overlay">
+    <div id="glitch-msg">>> INITIALIZING PROTOCOL_LAIN...</div>
+    <div style="font-size:12px; color: var(--glitch-red); margin-top:10px;">[ RE-ROUTING TO THE WIRED ]</div>
+</div>
+
+<div class="netscape-window">
+    <!-- Win95 Titlebar -->
+    <div class="title-bar">
+        <span>Netscape Navigator - [SECTION_B.LOG // SUBCONSCIOUS_BUFFER]</span>
+        <div class="win-buttons">
+            <button>_</button>
+            <button>□</button>
+            <button onclick="triggerJump('system_crash')">X</button>
+        </div>
+    </div>
+
+    <!-- Netscape Menu Bar -->
+    <div class="menu-bar">
+        <span><u>F</u>ile</span>
+        <span><u>E</u>dit</span>
+        <span><u>V</u>iew</span>
+        <span><u>G</u>o</span>
+        <span><u>B</u>ookmarks</span>
+        <span><u>O</u>ptions</span>
+        <span><u>H</u>elp</span>
+    </div>
+
+    <!-- URL Address Bar -->
+    <div class="url-bar">
+        <label>Location:</label>
+        <input type="text" class="url-input" value="http://www.geocities.com/underwater_1994/B.html?layer=02" readonly>
+    </div>
+
+    <!-- Web Body -->
+    <div class="web-body">
+        <!-- Floating Bubbles -->
+        <div class="bubble" style="left: 8%; width: 12px; height: 12px; animation-delay: 0s;"></div>
+        <div class="bubble" style="left: 32%; width: 8px; height: 8px; animation-delay: 2s;"></div>
+        <div class="bubble" style="left: 65%; width: 14px; height: 14px; animation-delay: 4.5s;"></div>
+        <div class="bubble" style="left: 88%; width: 10px; height: 10px; animation-delay: 1.2s;"></div>
+
+        <marquee scrollamount="4">
+            *** WELCOME TO SECTION_B *** REFRESH YOUR MIND WITH ICE-COLD SPRITE *** DIAL-IN NOISE DETECTED FROM IP: [KNIGHTS_UNKNOWN] *** CLOSE THE WORLD, OPEN THE NEXT ***
+        </marquee>
+
+        <header class="blog-header">
+            <h1 class="site-title">SECTION_B.LOG // 1994</h1>
+            <div class="subtitle">~ Underwater Liquid Matrix, Echoes & Sub-Conscious Buffers ~</div>
+        </header>
+
+        <div class="main-grid">
+            <!-- Sidebar Widget -->
+            <aside class="sidebar">
+                <div class="widget-box">
+                    <div class="widget-title">SYSTEM_STATUS</div>
+                    <p>Status: <span style="color:var(--sprite-green)">SUSPENDED</span></p>
+                    <p>Sub-Ether Temp: 18°C</p>
+                    <p>Beverage: Sprite (330ml)</p>
+                    <p>Modem: 56k Carrier Locked</p>
+                </div>
+
+                <div class="widget-box">
+                    <div class="widget-title">VISITOR_COUNTER</div>
+                    <div class="counter" id="visitor-count">0041994</div>
+                </div>
+
+                <div class="widget-box">
+                    <div class="widget-title">AUDIO_BUFFER</div>
+                    <div class="player-box">
+                        <div class="player-display" id="track-name">01. Nirvana - Lounge Act.mid</div>
+                        <button onclick="togglePlay()" style="width:100%; cursor:pointer;">[ PLAY / PAUSE BGM ]</button>
+                    </div>
+                </div>
+
+                <!-- Interactive ARG Mini Shell -->
+                <div class="widget-box">
+                    <div class="widget-title">TERMINAL_SHELL</div>
+                    <div class="terminal-widget">
+                        <div class="terminal-output" id="term-out">> Type 'HELP' or 'CONNECT'</div>
+                        <div class="terminal-input-line">
+                            <span>></span>
+                            <input type="text" id="term-in" class="terminal-input" placeholder="enter command..." onkeydown="handleTerm(event)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="widget-box">
+                    <div class="widget-title">NAV_PROTOCOLS</div>
+                    <ul class="nav-links">
+                        <li><a onclick="triggerJump('start')">> Layer 00: Classroom</a></li>
+                        <li><a onclick="triggerJump('rooftop')">> Layer 01: Rooftop</a></li>
+                        <li><a onclick="triggerJump('boot_pc')">> Layer 02: Terminal</a></li>
+                        <li><a onclick="triggerJump('deep_wired_entry')">> Layer 03: Deep Wired</a></li>
+                    </ul>
+                </div>
+            </aside>
+
+            <!-- Main Content Entries -->
+            <main>
+                <article class="log-post">
+                    <div class="post-header">
+                        <span>LOG #094 // LIQUID_SIGNAL_BLEED</span>
+                        <span>DATE: 1994-09-08</span>
+                    </div>
+                    <div class="post-body">
+                        <p>3:04 AM. Lights turned off. The only illumination in my room is the deep cyan glare of the CRT monitor.</p>
+                        <p>An ice-cold can of Sprite crackles on my desk as tiny carbonation bubbles float up the glass. Through my headphones, Kurt’s chorus pedal loops endlessly—that watery, pitch-bent tone feels like sinking into the bottom of an abandoned swimming pool.</p>
+
+                        <div class="ascii-box">
+  ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+   _.~"~._.~"~._  NIRVANA_POOL_SYS  _.~"~._.~"~._   
+  ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+        ┌──────────────┐      [ SPRITE_FIZZ.EXE ]   
+        │  [ 90s_WEB ] │     .-------------------.  
+        │  ( - _ - )   │    ( REFRESH YOUR MIND  ) 
+        │   <|   |>    │     '-------------------'  
+        └──────┬───────┘                            
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                        </div>
+
+                        <p>Except tonight, the hum behind the bassline isn't coming from the tape. It's a binary carrier tone. When I stare into the swimming pool backdrop on my screen, it doesn't stop at the bezel. I swear I can hear real water dripping somewhere behind my sound card.</p>
+                        <p style="margin-top:8px;">
+                            <span class="hidden-trigger" onclick="revealSecret('sec1')">[CLICK TO INSPECT PACKET TRACE]</span>
+                        </p>
+                        <div id="sec1" style="display:none; margin-top:8px; padding:6px; background:#000; border:1px solid var(--sprite-green); font-size:11px; color:var(--sprite-yellow);">
+                            > TRACE: 127.0.0.1 -> WIRED_GATEWAY<br>
+                            > MSG: "Physical bodies are obsolete. Have you checked the rooftop?"<br>
+                            > LINK: <a onclick="triggerJump('rooftop')" style="color:var(--sprite-green); cursor:pointer; text-decoration:underline;">[EXECUTE_ROOFTOP_PROTOCOL]</a>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="log-post">
+                    <div class="post-header">
+                        <span>LOG #095 // THE_GIRL_IN_THE_BUFFER</span>
+                        <span>DATE: 1994-08-24</span>
+                    </div>
+                    <div class="post-body">
+                        <p>Saw an unlisted IP scraping my Geocities directory at 4:12 AM. Trace route leads nowhere. It left a single zero-byte file in my server root: <span class="corrupted-text">LAIN.SYS</span>.</p>
+                        <p>Every time I attempt to delete it, my 56k modem dials out automatically without picking up the physical phone line. Someone left a message in my guestbook saying: <i>"The Knights are watching the nodes."</i></p>
+                        
+                        <p style="margin-top:10px;">
+                            Base64 Cipher found in header: <span class="corrupted-text" onclick="alert('Decoded: \'Here has no body.\'')">U0VHVkYgRVIgTk8gQk9EWS4=</span>
+                        </p>
+                    </div>
+                </article>
+
+                <!-- Interactive ARG Secret Log -->
+                <article class="log-post" style="border-color: var(--glitch-red);">
+                    <div class="post-header" style="color:var(--glitch-red);">
+                        <span>LOG #096 // [RESTRICTED_PROTOCOL]</span>
+                        <span>DATE: UNKNOWN</span>
+                    </div>
+                    <div class="post-body">
+                        <p>If you are reading this from a browser, you are not outside. You are already inside the network loop.</p>
+                        <p>The girl with the asymmetric hair clip is standing in the deep wired node. Do not disconnect the power supply.</p>
+                        <div style="margin-top:12px;">
+                            <button onclick="triggerJump('god_of_wired')" style="background:#000; color:var(--sprite-yellow); border:1px solid var(--sprite-yellow); padding:6px 12px; font-family:monospace; cursor:pointer;">
+                                >> CONNECT TO GOD OF THE WIRED
+                            </button>
+                        </div>
+                    </div>
+                </article>
+            </main>
+        </div>
+
+        <footer>
+            <div style="margin-bottom: 8px;">
+                <span class="badge">ARG_LAYER: 02</span>
+                <span class="badge">NETSCAPE 3.0 READY</span>
+                <span class="badge">KNIGHTS_APPROVED</span>
+            </div>
+            <p>© 1994 SECTION_B.LOG // ALL RIGHTS RESERVED IN THE WIRED</p>
+        </footer>
+    </div>
+</div>
+
+<script>
+/* =========================================================
+   ARG Audio & Web Audio API Detuning System
+   ========================================================= */
+let isPlaying = false;
+let audioCtx = null;
+let osc = null;
+let lfo = null;
+
+function togglePlay() {
+    const display = document.getElementById('track-name');
+    if (!isPlaying) {
+        isPlaying = true;
+        display.textContent = "▶ 01. Nirvana - Lounge Act.mid [ECHO_ACTIVE]";
+        display.style.color = "#ccff00";
+        startAmbientSynth();
+    } else {
+        isPlaying = false;
+        display.textContent = "❚❚ 01. Nirvana - Lounge Act.mid [PAUSED]";
+        display.style.color = "#00ff66";
+        stopAmbientSynth();
+    }
+}
+
+function startAmbientSynth() {
+    if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+    }
+    osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    // Deep underwater ambient frequency (110Hz detuned)
+    osc.type = 'sine';
+    osc.frequency.value = 110; 
+    gain.gain.value = 0.06;
+
+    // Sub-ether LFO pitch modulation
+    lfo = audioCtx.createOscillator();
+    lfo.frequency.value = 0.3; // Very slow pool sway
+    const lfoGain = audioCtx.createGain();
+    lfoGain.gain.value = 3.5; 
+    lfo.connect(osc.frequency);
+    
+    lfo.start();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+}
+
+function stopAmbientSynth() {
+    if (osc) {
+        osc.stop();
+        osc.disconnect();
+        osc = null;
+    }
+}
+
+/* Make audio creepy on secret trigger */
+function glitchAudio() {
+    if (osc && audioCtx) {
+        osc.frequency.setValueAtTime(432, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 1.2);
+    }
+}
+
+/* =========================================================
+   ARG Interactive Features & Navigation Hooks
+   ========================================================= */
+function revealSecret(id) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.style.display = el.style.display === 'none' ? 'block' : 'none';
+        glitchAudio();
+    }
+}
+
+/* Handle Mini Terminal Input */
+function handleTerm(e) {
+    if (e.key === 'Enter') {
+        const input = document.getElementById('term-in');
+        const output = document.getElementById('term-out');
+        const val = input.value.trim().toUpperCase();
+        input.value = '';
+
+        if (val === 'HELP') {
+            output.textContent = "COMMANDS: HELP, LAIN, KNIGHTS, CONNECT, CLEAR";
+        } else if (val === 'LAIN') {
+            output.textContent = "> LAIN_SYS: Present day, present time. Hahaha...";
+            glitchAudio();
+        } else if (val === 'KNIGHTS') {
+            output.textContent = "> KNIGHTS: We are everywhere in the sub-layer.";
+        } else if (val === 'CONNECT') {
+            output.textContent = "> ESTABLISHING DIRECT WIRED LINK...";
+            setTimeout(() => triggerJump('boot_pc'), 1000);
+        } else if (val === 'CLEAR') {
+            output.textContent = "> TERMINAL CLEARED.";
+        } else {
+            output.textContent = `> UNKNOWN PROTOCOL: '${val}'. Try 'HELP'.`;
+        }
+    }
+}
+
+/* Glitch Jump Redirect back into Galgame System */
+function triggerJump(nodeId) {
+    const glitch = document.getElementById('glitch-screen');
+    const msg = document.getElementById('glitch-msg');
+    
+    glitchAudio();
+    glitch.style.display = 'flex';
+    msg.textContent = `>> CONNECTING TO LAYER_NODE: [${nodeId.toUpperCase()}]...`;
+
+    setTimeout(() => {
+        // Redirects to Galgame main index with node hash parameter
+        window.location.href = `index.html#${nodeId}`;
+    }, 1200);
+}
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+    <!-- Web 2 
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SECTION_B.LOG // TRUE_INNER_SURFACE</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    :root {
+        --pool-deep: #000c1d;
+        --pool-blue: #004488;
+        --pool-cyan: #00d2ff;
+        --sprite-green: #00ff66;
+        --sprite-yellow: #ccff00;
+        --win-gray: #c0c0c0;
+        --win-dark: #808080;
+        --glitch-red: #ff0055;
+    }
+
+    body {
+        background-color: var(--pool-deep);
+        color: var(--pool-cyan);
+        font-family: "Courier New", Courier, monospace;
+        min-height: 100vh;
+        padding: 20px 10px;
+        display: flex;
+        justify-content: center;
+        background-image: 
+            radial-gradient(circle at 50% 30%, #002b55 0%, var(--pool-deep) 85%),
+            linear-gradient(0deg, rgba(0, 255, 102, 0.04) 1px, transparent 1px);
+        background-size: 100% 100%, 100% 4px;
+        overflow-x: hidden;
+        transition: filter 0.1s;
+    }
+
+    /* Severe Jump Scare Shake Animation */
+    @keyframes extremeShake {
+        0% { transform: translate(2px, 1px) rotate(0deg); filter: invert(0); }
+        10% { transform: translate(-25px, -5px) rotate(-2deg); filter: invert(1) hue-rotate(90deg); }
+        20% { transform: translate(-30px, 15px) rotate(2deg); filter: invert(0); }
+        30% { transform: translate(30px, 5px) rotate(0deg); filter: invert(1) contrast(200%); }
+        40% { transform: translate(5px, -15px) rotate(3deg); filter: invert(0); }
+        50% { transform: translate(-15px, 20px) rotate(-3deg); filter: invert(1) blur(2px) hue-rotate(180deg); }
+        60% { transform: translate(-35px, 5px) rotate(0deg); filter: invert(0); }
+        70% { transform: translate(30px, 5px) rotate(-2deg); filter: invert(1) contrast(300%); }
+        80% { transform: translate(-15px, -5px) rotate(3deg); filter: invert(0); }
+        90% { transform: translate(20px, 15px) rotate(0deg); filter: invert(1) hue-rotate(270deg); }
+        100% { transform: translate(2px, -5px) rotate(-1deg); filter: invert(0); }
+    }
+
+    .jumpscare-active {
+        animation: extremeShake 0.12s infinite;
+        pointer-events: none;
+    }
+
+    /* Netscape Window Frame */
+    .netscape-window {
+        width: min(920px, 98vw);
+        background: var(--win-gray);
+        border: 3px solid;
+        border-color: #ffffff var(--win-dark) var(--win-dark) #ffffff;
+        box-shadow: 0 0 35px rgba(0, 210, 255, 0.25), 8px 8px 0px #000;
+        color: #000;
+        position: relative;
+    }
+
+    .title-bar {
+        background: linear-gradient(90deg, #000080, #008080);
+        padding: 4px 8px;
+        color: #fff;
+        font-weight: bold;
+        font-size: 13px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .win-buttons button {
+        width: 16px; height: 14px;
+        background: var(--win-gray);
+        border: 1px solid;
+        border-color: #ffffff #000 #000 #ffffff;
+        font-size: 9px;
+        line-height: 10px;
+        cursor: pointer;
+    }
+
+    .url-bar {
+        padding: 5px 8px;
+        background: var(--win-gray);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        border-bottom: 2px solid #fff;
+        border-top: 2px solid var(--win-dark);
+    }
+
+    .url-input {
+        flex: 1;
+        background: #fff;
+        border: 2px solid;
+        border-color: var(--win-dark) #ffffff #ffffff var(--win-dark);
+        padding: 2px 6px;
+        font-family: monospace;
+        color: #000;
+    }
+
+    .web-body {
+        background: #001224;
+        color: #70e0ff;
+        padding: 20px;
+        border: 2px solid;
+        border-color: var(--win-dark) #ffffff #ffffff var(--win-dark);
+        position: relative;
+        overflow: hidden;
+    }
+
+    marquee {
+        background: #001f3f;
+        color: var(--sprite-green);
+        border: 1px dashed var(--sprite-green);
+        padding: 4px;
+        font-size: 12px;
+        margin-bottom: 20px;
+    }
+
+    header.blog-header {
+        text-align: center;
+        border-bottom: 2px double var(--pool-cyan);
+        padding-bottom: 15px;
+        margin-bottom: 25px;
+    }
+
+    h1.site-title {
+        font-size: 26px;
+        color: var(--sprite-yellow);
+        text-shadow: 2px 2px #000, 0 0 10px var(--sprite-green);
+        letter-spacing: 2px;
+    }
+
+    .subtitle { color: var(--pool-cyan); font-size: 12px; margin-top: 5px; }
+
+    .main-grid {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        gap: 20px;
+    }
+
+    @media (max-width: 700px) {
+        .main-grid { grid-template-columns: 1fr; }
+    }
+
+    .sidebar {
+        background: rgba(0, 25, 50, 0.7);
+        border: 1px solid var(--pool-cyan);
+        padding: 12px;
+        font-size: 12px;
+    }
+
+    .widget-box {
+        border: 1px solid var(--sprite-green);
+        padding: 8px;
+        margin-bottom: 15px;
+        background: #000814;
+    }
+
+    .widget-title {
+        color: var(--sprite-yellow);
+        font-weight: bold;
+        border-bottom: 1px solid var(--sprite-green);
+        padding-bottom: 3px;
+        margin-bottom: 8px;
+    }
+
+    ul.nav-links { list-style: none; }
+    ul.nav-links li { margin-bottom: 6px; }
+    ul.nav-links a {
+        color: var(--sprite-green);
+        text-decoration: none;
+        cursor: pointer;
+    }
+    ul.nav-links a:hover {
+        background: var(--sprite-green);
+        color: #000;
+    }
+    .doom-link {
+        color: var(--glitch-red) !important;
+        text-shadow: 0 0 3px var(--glitch-red);
+    }
+    .doom-link:hover { background: var(--glitch-red) !important; color: #fff !important; }
+
+    .log-post {
+        background: rgba(0, 16, 35, 0.85);
+        border: 1px solid var(--pool-cyan);
+        padding: 15px;
+        margin-bottom: 20px;
+        box-shadow: 4px 4px 0px rgba(0,0,0,0.6);
+        position: relative;
+    }
+
+    .post-header {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px dashed var(--pool-cyan);
+        padding-bottom: 5px;
+        margin-bottom: 10px;
+        color: var(--sprite-yellow);
+        font-size: 13px;
+    }
+
+    .post-body {
+        font-size: 13.5px;
+        line-height: 1.6;
+        color: #d0f5ff;
+    }
+
+    /* The Deep Dive Push Button */
+    .dive-button {
+        display: block;
+        width: 100%;
+        text-align: center;
+        background: #000;
+        color: var(--glitch-red);
+        border: 1px solid var(--glitch-red);
+        padding: 15px;
+        margin-top: 20px;
+        font-family: monospace;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        transition: 0.1s;
+    }
+
+    .dive-button:hover {
+        background: var(--glitch-red);
+        color: #000;
+        box-shadow: 0 0 15px var(--glitch-red);
+    }
+
+    footer {
+        text-align: center;
+        margin-top: 20px;
+        padding-top: 10px;
+        border-top: 1px solid var(--pool-cyan);
+        font-size: 11px;
+        color: var(--win-dark);
+    }
+</style>
+</head>
+<body id="main-body">
+
+<div class="netscape-window">
+    <div class="title-bar">
+        <span>Netscape - [SECTION_B.LOG // THE_SURFACE_IS_THE_BOTTOM]</span>
+        <div class="win-buttons">
+            <button>_</button>
+            <button>□</button>
+            <button>X</button>
+        </div>
+    </div>
+
+    <div class="url-bar">
+        <label>Location:</label>
+        <input type="text" class="url-input" value="file:///C:/SUBCONSCIOUS/SECTION_B.LOG" readonly>
+    </div>
+
+    <div class="web-body">
+        <marquee scrollamount="5">
+            *** THIS IS THE SURFACE *** BUT ALSO THE DEEPEST LAYER *** NO ONE ELSE IS HERE *** DO NOT EXECUTE KMT.DAT *** YOU ARE ALREADY INSIDE *** 
+        </marquee>
+
+        <header class="blog-header">
+            <h1 class="site-title">SECTION_B.LOG</h1>
+            <div class="subtitle">~ Paradoxical Buffer / True Monologue ~</div>
+        </header>
+
+        <div class="main-grid">
+            <aside class="sidebar">
+                <div class="widget-box">
+                    <div class="widget-title">SYSTEM_STATUS</div>
+                    <p>Status: <span style="color:var(--glitch-red)">BLEEDING</span></p>
+                    <p>Depth: Layer_00 (Surface)</p>
+                    <p>Reality: 404 Not Found</p>
+                </div>
+
+                <div class="widget-box">
+                    <div class="widget-title">DIRECTORY_TREE</div>
+                    <ul class="nav-links">
+                        <li><a href="index.html">> RETURN_TO_GALGAME</a></li>
+                        <li><a href="SECTION_A.LOG">> SECTION_A (The Wired)</a></li>
+                        <li style="margin-top:10px;">
+                            <a href="KMT.DAT" class="doom-link">> KMT.DAT [CORRUPTED]</a>
+                        </li>
+                    </ul>
+                </div>
+            </aside>
+
+            <main>
+                <article class="log-post">
+                    <div class="post-header">
+                        <span>LOG #001 // THE_PARADOX</span>
+                        <span>DATE: PRESENT DAY</span>
+                    </div>
+                    <div class="post-body">
+                        <p>Everyone thinks SECTION_B is just a secondary archive. A backup. A superficial aesthetic blog filled with pool water, Sprite cans, and 90s alt-rock midi tracks.</p>
+                        <br>
+                        <p>They are wrong.</p>
+                        <br>
+                        <p>The deeper you dig into a system, the more the architecture wraps around itself. This isn't the surface. This is the absolute bottom of my mind. A containment zone. I built this retro interface so I could look at something familiar while the rest of my consciousness unravels.</p>
+                    </div>
+                </article>
+
+                <article class="log-post">
+                    <div class="post-header">
+                        <span>LOG #000 // INVITATION</span>
+                        <span>DATE: NULL</span>
+                    </div>
+                    <div class="post-body">
+                        <p>You’ve been clicking around. You found the DOOM archive (KMT.DAT). You've played the visual novel. You think you are the player observing the protagonist.</p>
+                        <br>
+                        <p>But if this is my deepest layer, and you are reading it... then whose eyes are you using right now?</p>
+                        <br>
+                        <p>SECTION_A is where the real processing happens. It is the raw Wired. The ego. The noise. I can't protect you once you cross over.</p>
+                        
+                        <button class="dive-button" onclick="triggerDescent()">[ PUSH ME INTO THE WIRED ]</button>
+                    </div>
+                </article>
+            </main>
+        </div>
+
+        <footer>
+            <p>© 1994 SECTION_B // THE MIND IS A MOBIUS STRIP</p>
+        </footer>
+    </div>
+</div>
+
+<script>
+    let audioCtx = null;
+
+    function createViolentNoise() {
+        if (!audioCtx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+        }
+
+        // Extremely loud, distorted sawtooth crash
+        const osc1 = audioCtx.createOscillator();
+        const osc2 = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        osc1.type = 'sawtooth';
+        osc1.frequency.setValueAtTime(80, audioCtx.currentTime);
+        osc1.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.4);
+
+        osc2.type = 'square';
+        osc2.frequency.setValueAtTime(2000, audioCtx.currentTime);
+        osc2.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.4);
+
+        // Max volume burst fading out
+        gainNode.gain.setValueAtTime(3.0, audioCtx.currentTime); // Clipping on purpose
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+
+        osc1.connect(gainNode);
+        osc2.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        osc1.start();
+        osc2.start();
+        osc1.stop(audioCtx.currentTime + 0.6);
+        osc2.stop(audioCtx.currentTime + 0.6);
+    }
+
+    function triggerDescent() {
+        // 1. Play the violent Web Audio scare sound
+        createViolentNoise();
+
+        // 2. Trigger CSS Screen Shake and Color Inversion
+        document.getElementById('main-body').classList.add('jumpscare-active');
+
+        // 3. Forcefully push the player into SECTION_A.LOG (The Wired) after a brief terrifying delay
+        setTimeout(() => {
+            // Jumps to the consciousness layer
+            window.location.href = 'SECTION_A.LOG';
+        }, 800); // 800ms of pure shaking before the page redirects
+    }
+</script>
+</body>
+</html>
+
+
+
+-->
